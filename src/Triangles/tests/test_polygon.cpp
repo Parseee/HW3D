@@ -90,8 +90,6 @@ TEST(VectorTest, DotAndCrossProduct) {
     Vector_t cross = Vector_t::CrossProduct(v1, v2);
     EXPECT_DOUBLE_EQ(cross.v1().x(), 0);
     EXPECT_DOUBLE_EQ(cross.v1().y(), 0);
-    // Note: Your current implementation may produce incorrect z; expected 1 for
-    // standard cross product
 }
 
 // ------------------- Polygon_t Tests -------------------
@@ -158,6 +156,19 @@ TEST(PolygonTest, GeneralIntersectionCheckSinglePoint) {
     Polygon_t poly1({Point_t(0, 1, 0), Point_t(0, 0, 0), Point_t(1, 0, 0.5)});
     Polygon_t poly2(
         {Point_t(0, -1, 0.5), Point_t(0, -1, 1), Point_t(1, 0, 0.5)});
+    auto intersect = poly1.GeneralIntersectionCheck(poly2);
+    EXPECT_TRUE(intersect);
+}
+
+TEST(PolygonTest, GeneralIntersectionCheckComplex) {
+    Polygon_t poly1(
+        {Point_t(12.386644688712941, 13.149797301748318, 14.583230270789596),
+         Point_t(10.949402845223053, 11.498552932115821, 16.210422004080684),
+         Point_t(11.892947051130829, 10.90867559171325, 15.653029294217191)});
+    Polygon_t poly2(
+        {Point_t(12.824814622822574, 12.302666118691093, 13.317311583348722),
+         Point_t(10.934714901031004, 11.547678576168568, 15.710024434505659),
+         Point_t(13.022073702256872, 12.674256370441665, 14.655135339419592)});
     auto intersect = poly1.GeneralIntersectionCheck(poly2);
     EXPECT_TRUE(intersect);
 }
