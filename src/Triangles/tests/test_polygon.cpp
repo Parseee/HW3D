@@ -111,12 +111,6 @@ TEST(PolygonTest, ComputeProjection) {
     EXPECT_DOUBLE_EQ(proj, 9); // max component is z
 }
 
-TEST(PolygonTest, ComputeIntersectionInterval) {
-    Polygon_t poly({Point_t(0, 0, 0), Point_t(1, 0, 0), Point_t(0, 1, 0)});
-    auto [t_min, t_max] = poly.ComputeIntersectionInterval(1.0, -1.0, 2.0, 5.0);
-    EXPECT_LE(t_min, t_max);
-}
-
 TEST(PolygonTest, ComputeIntersectionIntervals) {
     Polygon_t poly({Point_t(0, 0, 0), Point_t(1, 0, 0), Point_t(0, 1, 0)});
     std::array<double, 3> distances = {1.0, -1.0, 0.5};
@@ -171,6 +165,17 @@ TEST(PolygonTest, GeneralIntersectionCheckComplex) {
          Point_t(13.022073702256872, 12.674256370441665, 14.655135339419592)});
     auto intersect = poly1.GeneralIntersectionCheck(poly2);
     EXPECT_TRUE(intersect);
+}
+
+TEST(PolygonTest, GeneralIntersectionCheckComplex2) {
+    Polygon_t poly1({Point_t(-21.1391, -2.96044, -3.74303),
+                     Point_t(-21.487, -3.0482, -3.85087),
+                     Point_t(-21.1587, -2.62302, -4.02156)});
+    Polygon_t poly2({Point_t(16.086, 2.91767, 11.365),
+                     Point_t(16.3106, 2.91342, 11.0859),
+                     Point_t(16.7994, 2.65756, 10.6859)});
+    auto intersect = poly1.GeneralIntersectionCheck(poly2);
+    EXPECT_FALSE(intersect);
 }
 
 TEST(PolygonTest, GeneralIntersectionCheckCoplanarAndNonCoplanar) {

@@ -11,7 +11,7 @@ from collections import defaultdict
 from itertools import combinations
 
 # === Parameters ===
-NUM_TRIANGLES = 100
+NUM_TRIANGLES = 10000
 OUT_TRI_FILE = "triangles.txt"
 OUT_INTER_FILE = "intersections.txt"
 # SEED = random.randint(0, 1000000)
@@ -299,7 +299,7 @@ for cell, idxs in cell_items:
         pairs_checked.add((a,b))
         count_candidates += 1
         if tri_tri_intersect(triangles[a], triangles[b]):
-            print(triangles[a], triangles[b])
+            # print(triangles[a], triangles[b])
             intersections += 1
     # progress log
     if len(pairs_checked) % 1000000 < 50:

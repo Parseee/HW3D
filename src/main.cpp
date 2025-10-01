@@ -53,13 +53,14 @@ int main() {
         for (size_t j = i + 1; j < polygons.size(); ++j) {
             if (polygons[i].GeneralIntersectionCheck(polygons[j])) {
                 ints += 1;
-                std::cout << polygons[i] << " " << polygons[j] << std::endl;
+                // std::cout << polygons[i] << " " << polygons[j] << std::endl;
+                break;
             }
         }
     }
     std::cout << ints << std::endl;
 
-    exportOBJ(points, n / 9, "triangles.obj");
+    // exportOBJ(points, n / 9, "triangles.obj");
 }
 
 /*
@@ -70,4 +71,26 @@ int main() {
 1 1 0
 0 -1 0
 1 1 1
+*/
+
+/*
+6
+-21.1391
+-2.96044
+-3.74303
+-21.487
+-3.0482
+-3.85087
+-21.1587
+-2.62302
+-4.02156
+16.086
+2.91767
+11.365
+16.3106
+2.91342
+11.0859
+16.7994
+2.65756
+10.6859
 */

@@ -166,7 +166,7 @@ class Polygon_t {
 
     std::array<double, POINT_NUM>
     ComputeDistances(const Polygon_t &poly) const {
-        auto norm = Vector_t::CrossProduct(Vector_t(v2() - v1()),
+        auto norm = Vector_t::CrossProduct(Vector_t(v1() - v0()),
                                            Vector_t(v2() - v0()));
         auto d2 = -Vector_t::DotProduct(norm, Vector_t{v0()});
 
@@ -177,52 +177,42 @@ class Polygon_t {
     }
 
     static double ComputeProjection(const Vector_t &axis, const Vector_t &vec) {
-        auto max_component =
-            std::max({axis.v1().x(), axis.v1().y(), axis.v1().z()});
+        double ax = axis.v1().x(), ay = axis.v1().y(), az = axis.v1().z();
+        double adx = std::abs(ax), ady = std::abs(ay), adz = std::abs(az);
 
-        return (max_component == axis.v1().x())   ? vec.v1().x()
-               : (max_component == axis.v1().y()) ? vec.v1().y()
-                                                  : vec.v1().z();
+        if (adx >= ady && adx >= adz)
+            return vec.v1().x();
+        if (ady >= adx && ady >= adz)
+            return vec.v1().y();
+        return vec.v1().z();
     }
 
-    std::pair<double, double>
-    ComputeIntersectionInterval(const double dist_i, const double dist_j,
-                                const double proj_i,
-                                const double proj_j) const {
-        double t_max = std::numeric_limits<double>::min();
-        double t_min = std::numeric_limits<double>::max();
-
-        auto s =
-            std::max(dist_i / (dist_i - dist_j), dist_j / (dist_i - dist_j));
-        t_max = std::max(proj_i + s * (proj_j - proj_i), t_max);
-        t_min = std::min(proj_i + s * (proj_j - proj_i), t_min);
-
-        return {t_min, t_max};
-    }
-
-    // FIXME: I do not really understand what happens here
     std::pair<double, double> ComputeIntersectionIntervals(
-        const Vector_t &axis,
-        const std::array<double, POINT_NUM> &distances) const {
-        std::array<double, POINT_NUM> projections{
+        const Vector_t &axis, const std::array<double, POINT_NUM> &dist) const {
+        std::array<double, POINT_NUM> proj{
             ComputeProjection(axis, Vector_t{v0()}),
             ComputeProjection(axis, Vector_t{v1()}),
             ComputeProjection(axis, Vector_t{v2()})};
 
         std::pair<double, double> t;
-        // determine which are on one side
-        if (distances[0] * distances[1] >= 0) {
-            t = ComputeIntersectionInterval(distances[0], distances[1],
-                                            projections[0], projections[1]);
-        } else if (distances[1] * distances[2] >= 0) {
-            t = ComputeIntersectionInterval(distances[1], distances[2],
-                                            projections[1], projections[2]);
+        if (dist[0] * dist[1] > 0) {
+            t.first =
+                proj[2] + (proj[0] - proj[2]) * (dist[2] / (dist[2] - dist[0]));
+            t.second =
+                proj[2] + (proj[1] - proj[2]) * (dist[2] / (dist[2] - dist[1]));
+        } else if (dist[1] * dist[2] >= 0) {
+            t.first =
+                proj[0] + (proj[1] - proj[0]) * (dist[0] / (dist[0] - dist[1]));
+            t.second =
+                proj[0] + (proj[2] - proj[0]) * (dist[0] / (dist[0] - dist[2]));
         } else {
-            t = ComputeIntersectionInterval(distances[2], distances[0],
-                                            projections[2], projections[0]);
+            t.first =
+                proj[1] + (proj[2] - proj[1]) * (dist[1] / (dist[1] - dist[2]));
+            t.second =
+                proj[1] + (proj[0] - proj[1]) * (dist[1] / (dist[1] - dist[0]));
         }
 
-        return t;
+        return {std::min(t.first, t.second), std::max(t.first, t.second)};
     }
 
     bool ComplexIntersectionCheck(
@@ -241,12 +231,10 @@ class Polygon_t {
         auto other_interval =
             poly.ComputeIntersectionIntervals(intersect_norm, other_distances);
 
-        if (std::max(this_interval.first, other_interval.first) <=
-            std::min(this_interval.second, other_interval.second)) {
-            std::cerr << "Complex\n";
-        }
-        return (std::max(this_interval.first, other_interval.first) <=
-                std::min(this_interval.second, other_interval.second));
+        auto left_border = std::max(this_interval.first, other_interval.first);
+        auto right_border =
+            std::min(this_interval.second, other_interval.second);
+        return left_border <= right_border;
     }
 
     bool GeneralIntersectionCheck(const Polygon_t &poly) {
@@ -255,9 +243,13 @@ class Polygon_t {
             poly.ComputeDistances(*this);
 
         if (std::all_of(this_distances.begin(), this_distances.end(),
+                        [](auto element) { return (element > EPS); }) ||
+            std::all_of(other_distances.begin(), other_distances.end(),
                         [](auto element) { return (element > EPS); })) {
             return false;
         } else if (std::all_of(this_distances.begin(), this_distances.end(),
+                               [](auto element) { return (-element > EPS); }) ||
+                   std::all_of(other_distances.begin(), other_distances.end(),
                                [](auto element) { return (-element > EPS); })) {
             return false;
         } else if (std::all_of(
@@ -279,7 +271,7 @@ class Polygon_t {
             std::array<double, POINT_NUM> dirs;
             for (size_t j = 0; j < sides.size(); ++j) {
                 Vector_t center = Vector_t(poly[i] - (*this)[j]);
-                dirs[i] = Vector_t::DotProduct(sides[i], center);
+                dirs[j] = Vector_t::DotProduct(sides[i], center);
             }
             if (!std::all_of(dirs.begin(), dirs.end(),
                              [](const auto &elem) { return elem > EPS; }) &&
