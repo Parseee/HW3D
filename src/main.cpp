@@ -40,11 +40,13 @@ int main() {
     //     points.push_back({x, y, z});
     // }
 
-    Polygon_t a({points[0], points[1], points[2]});
-    Polygon_t b({points[0], points[1], points[2]});
-    std::cout << a.GeneralIntersectionCheck(b);
+    // Polygon_t a({points[0], points[1], points[2]});
+    // Polygon_t b({points[3], points[4], points[5]});
+    Polygon_t a({Point_t(0, 1, 0), Point_t(0, 0, 0), Point_t(1, 0, 0.5)});
+    Polygon_t b({Point_t(0, -1, 0.5), Point_t(0, -1, 1), Point_t(0, 0, 0.5)});
+    std::cout << a.GeneralIntersectionCheck(b) << std::endl;
 
-    exportOBJ(points, 2, "triangles.obj");
+    // exportOBJ(points, 2, "triangles.obj");
 }
 
 /*

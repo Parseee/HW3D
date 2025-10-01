@@ -27,7 +27,7 @@ target_compile_options(project_compiler_options INTERFACE
 )
 
 add_subdirectory(src/Triangles)
-include_directories(src src/Triangles/src)
+include_directories(src)
 
 set(TRIANGLES_SOURCES 
     src/main.cpp

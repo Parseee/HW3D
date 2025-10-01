@@ -30,7 +30,7 @@ class Point_t {
 
     Point_t operator-() const { return Point_t(-x_, -y_, -z_); }
 
-    Point_t operator-(const Point_t &point) const { return point + (-(*this)); }
+    Point_t operator-(const Point_t &point) const { return (*this) + (-point); }
 
     double x() const { return x_; }
     double y() const { return y_; }
@@ -42,7 +42,7 @@ class Point_t {
     double z_;
 };
 
-class Vector_t : public Point_t {
+class Vector_t {
   private:
     static constexpr size_t POINT_NUM = 2;
 
@@ -66,7 +66,7 @@ class Vector_t : public Point_t {
     static Vector_t CrossProduct(const Vector_t &vec1, const Vector_t &vec2) {
         double c1 = vec1.v1_.y() * vec2.v1_.z() - vec2.v1_.y() * vec1.v1_.z();
         double c2 =
-            -(vec1.v1_.x() * vec2.v1_.z() - vec2.v1_.x() * vec1.v0_.z());
+            -(vec1.v1_.x() * vec2.v1_.z() - vec2.v1_.x() * vec1.v1_.z());
         double c3 = vec1.v1_.x() * vec2.v1_.y() - vec2.v1_.x() * vec1.v1_.y();
         return Vector_t(Point_t{c1, c2, c3});
     }
@@ -117,27 +117,23 @@ class Polygon_t {
         return (std::abs(dist) < EPS) ? 0.0 : dist;
     }
 
-    std::array<double, VERT_NUM> ComputeDistances() const {
+    std::array<double, VERT_NUM> ComputeDistances(const Polygon_t &poly) const {
         auto norm =
             Vector_t::CrossProduct(Vector_t(v2 - v1), Vector_t(v2 - v0));
         auto d2 = -Vector_t::DotProduct(norm, Vector_t{v0});
 
-        return std::array<double, VERT_NUM>{SignedDistance(norm, v0, d2),
-                                            SignedDistance(norm, v1, d2),
-                                            SignedDistance(norm, v2, d2)};
+        return std::array<double, VERT_NUM>{SignedDistance(norm, poly.v0, d2),
+                                            SignedDistance(norm, poly.v1, d2),
+                                            SignedDistance(norm, poly.v2, d2)};
     }
 
-    double ComputeProjection(const Vector_t &axis, const Vector_t &vec) const {
+    static double ComputeProjection(const Vector_t &axis, const Vector_t &vec) {
         auto max_component =
             std::max({axis.v1().x(), axis.v1().y(), axis.v1().z()});
 
         return (max_component == axis.v1().x())   ? vec.v1().x()
                : (max_component == axis.v1().y()) ? vec.v1().y()
-                                                  : vec.v1().y();
-    }
-
-    bool CoplanarIntersectionCheck(const Polygon_t &poly) const {
-        return false;
+                                                  : vec.v1().z();
     }
 
     std::pair<double, double>
@@ -201,8 +197,9 @@ class Polygon_t {
     }
 
     bool GeneralIntersectionCheck(const Polygon_t &poly) {
-        std::array<double, VERT_NUM> this_distances = ComputeDistances();
-        std::array<double, VERT_NUM> other_distances = poly.ComputeDistances();
+        std::array<double, VERT_NUM> this_distances = ComputeDistances(poly);
+        std::array<double, VERT_NUM> other_distances =
+            poly.ComputeDistances(*this);
 
         if (std::all_of(this_distances.begin(), this_distances.end(),
                         [](auto element) {
@@ -216,6 +213,16 @@ class Polygon_t {
         }
 
         return ComplexIntersectionCheck(poly, this_distances, other_distances);
+    }
+
+    // bool CheckVertexInPolygon(const Polygon_t& poly) {
+    //     for 
+    // }
+
+    bool CoplanarIntersectionCheck(const Polygon_t &poly) const {
+        // TODO: add AABB for speed
+
+
     }
 
   private:
