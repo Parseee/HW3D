@@ -11,18 +11,18 @@ from collections import defaultdict
 from itertools import combinations
 
 # === Parameters ===
-NUM_TRIANGLES = 10000
+NUM_TRIANGLES = 10
 OUT_TRI_FILE = "triangles.txt"
 OUT_INTER_FILE = "intersections.txt"
-# SEED = random.randint(0, 1000000)
-SEED = 43384
+SEED = random.randint(0, 1000000)
+# SEED = 43384
 print(SEED)
 
 # Space layout: create several clusters where triangles overlap
-NUM_CLUSTERS = 50
-CLUSTER_RADIUS = 10.0    # radius of cluster where triangle vertices lie
+NUM_CLUSTERS = 1
+CLUSTER_RADIUS = 1.0    # radius of cluster where triangle vertices lie
 CLUSTER_SPREAD = 2.0  # distance between cluster centers
-TRI_SIZE = 1.0          # typical triangle size (scale of edge length)
+TRI_SIZE = 3.0          # typical triangle size (scale of edge length)
 
 # Spatial hashing grid resolution: number of cells on each axis
 # Increase to reduce comparisons; decrease to ensure nearby triangles fall into same cell.

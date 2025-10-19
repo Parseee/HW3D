@@ -60,7 +60,7 @@ int main() {
     }
     std::cout << ints << std::endl;
 
-    // exportOBJ(points, n / 9, "triangles.obj");
+    exportOBJ(points, n / 9, "triangles.obj");
 }
 
 /*
