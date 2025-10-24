@@ -56,28 +56,26 @@ TEST(PointTest, AdditionAndSubtraction) {
 // ------------------- Vector_t Tests -------------------
 TEST(VectorTest, Constructors) {
     Point_t p1(1, 2, 3);
+    Vector_t vec1(p1);
+    EXPECT_DOUBLE_EQ(vec1.x(), 1);
+    
     Point_t p2(4, 5, 6);
-    Vector_t vec1({p1, p2});
-    EXPECT_DOUBLE_EQ(vec1.v0().x(), 1);
-    EXPECT_DOUBLE_EQ(vec1.v1().x(), 4);
-
     Vector_t vec2(p2);
-    EXPECT_DOUBLE_EQ(vec2.v0().x(), 0);
-    EXPECT_DOUBLE_EQ(vec2.v1().x(), 4);
+    EXPECT_DOUBLE_EQ(vec2.x(), 4);
 }
 
 TEST(VectorTest, AdditionAndMultiplication) {
     Vector_t vec(Point_t(1, 2, 3));
     Point_t offset(2, 3, 4);
     Vector_t sum = vec + offset;
-    EXPECT_DOUBLE_EQ(sum.v1().x(), 3);
-    EXPECT_DOUBLE_EQ(sum.v1().y(), 5);
-    EXPECT_DOUBLE_EQ(sum.v1().z(), 7);
+    EXPECT_DOUBLE_EQ(sum.x(), 3);
+    EXPECT_DOUBLE_EQ(sum.y(), 5);
+    EXPECT_DOUBLE_EQ(sum.z(), 7);
 
     Vector_t scaled = vec * 2.0;
-    EXPECT_DOUBLE_EQ(scaled.v1().x(), 2);
-    EXPECT_DOUBLE_EQ(scaled.v1().y(), 4);
-    EXPECT_DOUBLE_EQ(scaled.v1().z(), 6);
+    EXPECT_DOUBLE_EQ(scaled.x(), 2);
+    EXPECT_DOUBLE_EQ(scaled.y(), 4);
+    EXPECT_DOUBLE_EQ(scaled.z(), 6);
 }
 
 TEST(VectorTest, DotAndCrossProduct) {
@@ -88,8 +86,8 @@ TEST(VectorTest, DotAndCrossProduct) {
     EXPECT_DOUBLE_EQ(dot, 0);
 
     Vector_t cross = Vector_t::CrossProduct(v1, v2);
-    EXPECT_DOUBLE_EQ(cross.v1().x(), 0);
-    EXPECT_DOUBLE_EQ(cross.v1().y(), 0);
+    EXPECT_DOUBLE_EQ(cross.x(), 0);
+    EXPECT_DOUBLE_EQ(cross.y(), 0);
 }
 
 // ------------------- Polygon_t Tests -------------------
@@ -209,7 +207,7 @@ TEST(PointTest, ZeroVectorOperations) {
 TEST(VectorTest, ScalarZeroMultiplication) {
     Vector_t v(Point_t(1, 2, 3));
     Vector_t zero_scaled = v * 0.0;
-    EXPECT_DOUBLE_EQ(zero_scaled.v1().x(), 0);
-    EXPECT_DOUBLE_EQ(zero_scaled.v1().y(), 0);
-    EXPECT_DOUBLE_EQ(zero_scaled.v1().z(), 0);
+    EXPECT_DOUBLE_EQ(zero_scaled.x(), 0);
+    EXPECT_DOUBLE_EQ(zero_scaled.y(), 0);
+    EXPECT_DOUBLE_EQ(zero_scaled.z(), 0);
 }

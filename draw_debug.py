@@ -50,4 +50,5 @@ ax.view_init(elev=30, azim=45)
 
 # Save image locally
 plt.savefig("triangles_visualization.png", dpi=300)
+# plt.show()
 plt.close()  # Close figure to free memory

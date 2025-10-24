@@ -59,59 +59,42 @@ class Point_t {
 
 class Vector_t {
   private:
-    static constexpr size_t POINT_NUM = 2;
+    static constexpr size_t POINT_NUM = 1;
 
-    union Vec_t {
-        struct {
-            Point_t v0_;
-            Point_t v1_;
-        };
-        Point_t points[POINT_NUM];
-
-        Vec_t(Point_t p1, Point_t p2) : v0_(p1), v1_(p2) {}
-
-        Vec_t(const std::array<Point_t, POINT_NUM> &points)
-            : v0_(points[0]), v1_(points[1]) {}
-    } data_;
+    Point_t v_;
 
   public:
-    Vector_t(const std::array<Point_t, POINT_NUM> &points) : data_(points) {}
     // TODO: {initializer}
-    Vector_t(const Point_t point = {0, 0, 0})
-        : data_(Point_t{0, 0, 0}, point) {}
+    Vector_t(const Point_t point = {0, 0, 0}) : v_(point) {}
 
     Vector_t operator+(const Point_t point) const noexcept {
-        return Vector_t(Point_t{v1().x() + point.x(), v1().y() + point.y(),
-                                v1().z() + point.z()});
+        return Vector_t(Point_t{x() + point.x(), y() + point.y(),
+                                z() + point.z()});
     }
 
     Vector_t operator*(const double coef) const noexcept {
         return Vector_t(
-            Point_t{v1().x() * coef, v1().y() * coef, v1().z() * coef});
+            Point_t{x() * coef, y() * coef, z() * coef});
     }
-
-    Point_t &operator[](size_t i) { return data_.points[i]; }
-    const Point_t &operator[](size_t i) const { return data_.points[i]; }
 
     static Vector_t CrossProduct(const Vector_t &vec1, const Vector_t &vec2) {
         double c1 =
-            vec1.v1().y() * vec2.v1().z() - vec2.v1().y() * vec1.v1().z();
+            vec1.y() * vec2.z() - vec2.y() * vec1.z();
         double c2 =
-            -(vec1.v1().x() * vec2.v1().z() - vec2.v1().x() * vec1.v1().z());
+            -(vec1.x() * vec2.z() - vec2.x() * vec1.z());
         double c3 =
-            vec1.v1().x() * vec2.v1().y() - vec2.v1().x() * vec1.v1().y();
+            vec1.x() * vec2.y() - vec2.x() * vec1.y();
         return Vector_t(Point_t{c1, c2, c3});
     }
 
     static double DotProduct(const Vector_t &vec1, const Vector_t &vec2) {
-        return vec1.v1().x() * vec2.v1().x() + vec1.v1().y() * vec2.v1().y() +
-               vec1.v1().z() * vec2.v1().z();
+        return vec1.x() * vec2.x() + vec1.y() * vec2.y() +
+               vec1.z() * vec2.z();
     }
 
-    const Point_t v0() const { return data_.v0_; }
-    const Point_t v1() const { return data_.v1_; }
-
-    // TODO: probably add x() y() z() that will return v1().x()
+    double x() const { return v_.x(); }
+    double y() const { return v_.y(); }
+    double z() const { return v_.z(); }
 };
 
 // FIXME: remove the fuckery with mixed {} and () initializations
@@ -157,7 +140,7 @@ class Polygon_t {
         return stream;
     }
 
-    // TODO: ERRORS DO NOT EXIST?
+    // TODO: noexcept?
     double SignedDistance(const Vector_t &norm, const Point_t x,
                           const double shift) const {
         auto dist = Vector_t::DotProduct(norm, x) + shift;
@@ -177,14 +160,14 @@ class Polygon_t {
     }
 
     static double ComputeProjection(const Vector_t &axis, const Vector_t &vec) {
-        double ax = axis.v1().x(), ay = axis.v1().y(), az = axis.v1().z();
+        double ax = axis.x(), ay = axis.y(), az = axis.z();
         double adx = std::abs(ax), ady = std::abs(ay), adz = std::abs(az);
 
         if (adx >= ady && adx >= adz)
-            return vec.v1().x();
+            return vec.x();
         if (ady >= adx && ady >= adz)
-            return vec.v1().y();
-        return vec.v1().z();
+            return vec.y();
+        return vec.z();
     }
 
     std::pair<double, double> ComputeIntersectionIntervals(
