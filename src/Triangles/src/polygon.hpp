@@ -3,9 +3,10 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
-#include <limits>
+#include <format>
 
 #include <gtest/gtest.h>
+#include <iostream>
 #include <ostream>
 
 namespace {
@@ -37,16 +38,6 @@ class Point_t {
 
     Point_t(const std::array<double, POINT_NUM> &arr) : data_(arr) {}
 
-    Point_t operator+(const Point_t &point) const {
-        return Point_t(x() + point.x(), y() + point.y(), z() + point.z());
-    }
-
-    Point_t operator-(const Point_t &point) const {
-        return Point_t(x() - point.x(), y() - point.y(), z() - point.z());
-    }
-
-    Point_t operator-() const { return Point_t(-x(), -y(), -z()); }
-
     double x() const { return data_.x_; }
     double y() const { return data_.y_; }
     double z() const { return data_.z_; }
@@ -56,6 +47,18 @@ class Point_t {
 
     const double *data() const { return data_.points; }
 };
+
+inline Point_t operator+(const Point_t &p1, const Point_t &p2) {
+    return Point_t(p1.x() + p2.x(), p1.y() + p2.y(), p1.z() + p2.z());
+}
+
+inline Point_t operator-(const Point_t &p1, const Point_t &p2) {
+    return Point_t(p1.x() - p2.x(), p1.y() - p2.y(), p1.z() - p2.z());
+}
+
+inline Point_t operator-(const Point_t &point) {
+    return Point_t(-point.x(), -point.y(), -point.z());
+}
 
 class Vector_t {
   private:
@@ -67,29 +70,15 @@ class Vector_t {
     // TODO: {initializer}
     Vector_t(const Point_t point = {0, 0, 0}) : v_(point) {}
 
-    Vector_t operator+(const Point_t point) const noexcept {
-        return Vector_t(Point_t{x() + point.x(), y() + point.y(),
-                                z() + point.z()});
-    }
-
-    Vector_t operator*(const double coef) const noexcept {
-        return Vector_t(
-            Point_t{x() * coef, y() * coef, z() * coef});
-    }
-
     static Vector_t CrossProduct(const Vector_t &vec1, const Vector_t &vec2) {
-        double c1 =
-            vec1.y() * vec2.z() - vec2.y() * vec1.z();
-        double c2 =
-            -(vec1.x() * vec2.z() - vec2.x() * vec1.z());
-        double c3 =
-            vec1.x() * vec2.y() - vec2.x() * vec1.y();
+        double c1 = vec1.y() * vec2.z() - vec2.y() * vec1.z();
+        double c2 = -(vec1.x() * vec2.z() - vec2.x() * vec1.z());
+        double c3 = vec1.x() * vec2.y() - vec2.x() * vec1.y();
         return Vector_t(Point_t{c1, c2, c3});
     }
 
     static double DotProduct(const Vector_t &vec1, const Vector_t &vec2) {
-        return vec1.x() * vec2.x() + vec1.y() * vec2.y() +
-               vec1.z() * vec2.z();
+        return vec1.x() * vec2.x() + vec1.y() * vec2.y() + vec1.z() * vec2.z();
     }
 
     double x() const { return v_.x(); }
@@ -97,11 +86,27 @@ class Vector_t {
     double z() const { return v_.z(); }
 };
 
+inline Vector_t operator+(const Vector_t &vec, const Point_t &point) noexcept {
+    return Vector_t(
+        Point_t{vec.x() + point.x(), vec.y() + point.y(), vec.z() + point.z()});
+}
+
+inline Vector_t operator*(const Vector_t &vec, const double coef) noexcept {
+    return Vector_t(Point_t{vec.x() * coef, vec.y() * coef, vec.z() * coef});
+}
+
+inline std::ostream &operator<<(std::ostream &out, const Vector_t &vec) {
+    out << std::format("vector((0,0,0), ({:.2f}, {:.2f}, {:.2f}))", vec.x(),
+                       vec.y(), vec.z());
+    return out;
+}
+
 // FIXME: remove the fuckery with mixed {} and () initializations
 class Polygon_t {
-  private:
+  public:
     static constexpr size_t POINT_NUM = 3;
 
+  private:
     union Pol_t {
         struct {
             Point_t v0_;
@@ -125,20 +130,6 @@ class Polygon_t {
 
     Point_t &operator[](size_t i) { return data_.points[i]; }
     const Point_t &operator[](size_t i) const { return data_.points[i]; }
-
-    friend std::ostream &operator<<(std::ostream &stream,
-                                    const Polygon_t &poly) {
-        stream << '(';
-        for (size_t i = 0; i < POINT_NUM; ++i) {
-            stream << '(' << poly[i].x() << "," << poly[i].y() << ","
-                   << poly[i].z() << ')';
-            if (i != POINT_NUM - 1) {
-                stream << ',';
-            }
-        }
-        stream << ')';
-        return stream;
-    }
 
     // TODO: noexcept?
     double SignedDistance(const Vector_t &norm, const Point_t x,
@@ -170,6 +161,40 @@ class Polygon_t {
         return vec.z();
     }
 
+    // std::pair<double, double> ComputeIntersectionIntervals(
+    //     const Vector_t &axis, const std::array<double, POINT_NUM> &dist)
+    //     const { std::array<double, POINT_NUM> proj{
+    //         ComputeProjection(axis, Vector_t{v0()}),
+    //         ComputeProjection(axis, Vector_t{v1()}),
+    //         ComputeProjection(axis, Vector_t{v2()})};
+
+    //     std::pair<double, double> t;
+    //     if (dist[0] * dist[1] > 0) {
+    //         t.first =
+    //             proj[2] + (proj[0] - proj[2]) * (dist[2] / (dist[2] -
+    //             dist[0]));
+    //         t.second =
+    //             proj[2] + (proj[1] - proj[2]) * (dist[2] / (dist[2] -
+    //             dist[1]));
+    //     } else if (dist[1] * dist[2] > 0) {
+    //         t.first =
+    //             proj[0] + (proj[1] - proj[0]) * (dist[0] / (dist[0] -
+    //             dist[1]));
+    //         t.second =
+    //             proj[0] + (proj[2] - proj[0]) * (dist[0] / (dist[0] -
+    //             dist[2]));
+    //     } else {
+    //         t.first =
+    //             proj[1] + (proj[2] - proj[1]) * (dist[1] / (dist[1] -
+    //             dist[2]));
+    //         t.second =
+    //             proj[1] + (proj[0] - proj[1]) * (dist[1] / (dist[1] -
+    //             dist[0]));
+    //     }
+
+    //     return {std::min(t.first, t.second), std::max(t.first, t.second)};
+    // }
+
     std::pair<double, double> ComputeIntersectionIntervals(
         const Vector_t &axis, const std::array<double, POINT_NUM> &dist) const {
         std::array<double, POINT_NUM> proj{
@@ -177,50 +202,55 @@ class Polygon_t {
             ComputeProjection(axis, Vector_t{v1()}),
             ComputeProjection(axis, Vector_t{v2()})};
 
-        std::pair<double, double> t;
-        if (dist[0] * dist[1] > 0) {
-            t.first =
-                proj[2] + (proj[0] - proj[2]) * (dist[2] / (dist[2] - dist[0]));
-            t.second =
-                proj[2] + (proj[1] - proj[2]) * (dist[2] / (dist[2] - dist[1]));
-        } else if (dist[1] * dist[2] >= 0) {
-            t.first =
-                proj[0] + (proj[1] - proj[0]) * (dist[0] / (dist[0] - dist[1]));
-            t.second =
-                proj[0] + (proj[2] - proj[0]) * (dist[0] / (dist[0] - dist[2]));
-        } else {
-            t.first =
-                proj[1] + (proj[2] - proj[1]) * (dist[1] / (dist[1] - dist[2]));
-            t.second =
-                proj[1] + (proj[0] - proj[1]) * (dist[1] / (dist[1] - dist[0]));
+        int crossing_count = 0;
+        double intersections[2];
+
+        for (int i = 0; i < 3; i++) {
+            int j = (i + 1) % 3;
+
+            if (dist[i] * dist[j] < 0) {
+                double param = dist[i] / (dist[i] - dist[j]);
+                intersections[crossing_count] =
+                    proj[i] + param * (proj[j] - proj[i]);
+                crossing_count++;
+            } else if (std::abs(dist[i]) < EPS) {
+                intersections[crossing_count] = proj[i];
+                crossing_count++;
+            }
         }
 
-        return {std::min(t.first, t.second), std::max(t.first, t.second)};
+        if (crossing_count == 2) {
+            return {std::min(intersections[0], intersections[1]),
+                    std::max(intersections[0], intersections[1])};
+        } else {
+            return {0.0, 0.0};
+        }
     }
 
     bool ComplexIntersectionCheck(
         const Polygon_t &poly,
         const std::array<double, POINT_NUM> &this_distances,
         const std::array<double, POINT_NUM> &other_distances) const {
-        auto norm1 = Vector_t::CrossProduct(Vector_t(v2() - v1()),
-                                            Vector_t(v2() - v0()));
-        auto norm2 = Vector_t::CrossProduct(Vector_t(poly.v2() - poly.v1()),
-                                            Vector_t(poly.v2() - poly.v0()));
+        auto norm1 = Vector_t::CrossProduct(Vector_t(v2() - v0()),
+                                            Vector_t(v1() - v0()));
+        auto norm2 = Vector_t::CrossProduct(Vector_t(poly.v2() - poly.v0()),
+                                            Vector_t(poly.v1() - poly.v0()));
 
         auto intersect_norm = Vector_t::CrossProduct(norm1, norm2);
 
         auto this_interval =
-            ComputeIntersectionIntervals(intersect_norm, this_distances);
+            ComputeIntersectionIntervals(intersect_norm, other_distances);
         auto other_interval =
-            poly.ComputeIntersectionIntervals(intersect_norm, other_distances);
+            poly.ComputeIntersectionIntervals(intersect_norm, this_distances);
 
         auto left_border = std::max(this_interval.first, other_interval.first);
         auto right_border =
             std::min(this_interval.second, other_interval.second);
-        return left_border <= right_border;
+        return right_border >= left_border;
     }
 
     bool GeneralIntersectionCheck(const Polygon_t &poly) {
+        // from poly to plane of this
         std::array<double, POINT_NUM> this_distances = ComputeDistances(poly);
         std::array<double, POINT_NUM> other_distances =
             poly.ComputeDistances(*this);
@@ -280,7 +310,6 @@ class Polygon_t {
     }
 
     bool CheckPolygonSidesIntersection(const Polygon_t &poly) const {
-
         for (size_t i = 0; i < POINT_NUM; ++i) {
             for (size_t j = 0; j < POINT_NUM; ++j) {
                 if (!CheckSegmentsIntersection(poly[i], poly[j], (*this)[i],
@@ -308,5 +337,18 @@ class Polygon_t {
         return false;
     }
 
-  private:
+    // FIXME: move them out
+    friend std::ostream &operator<<(std::ostream &stream,
+                                    const Polygon_t &poly) {
+        stream << "triangle(";
+        for (size_t i = 0; i < poly.POINT_NUM; ++i) {
+            stream << std::format("({:.2f}, {:.2f}, {:.2f})", poly[i].x(),
+                                  poly[i].y(), poly[i].z());
+            if (i != poly.POINT_NUM - 1) {
+                stream << ',';
+            }
+        }
+        stream << ")";
+        return stream;
+    }
 };

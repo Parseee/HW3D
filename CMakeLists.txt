@@ -7,24 +7,27 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 enable_testing()
 
-include(FetchContent)
-FetchContent_Declare(
-  googletest
-  URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
-)
+find_package(GTest REQUIRED)
+
 # whatever windows needs
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 if (WIN32)
   set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 endif (WIN32)
 
-FetchContent_MakeAvailable(googletest)
-
 add_library(project_compiler_options INTERFACE)
-target_compile_options(project_compiler_options INTERFACE
-    $<$<CONFIG:Debug>:-Wall -Wextra -g -fno-omit-frame-pointer -fsanitize=address,leak>
-    $<$<CONFIG:Release>:-O2>
-)
+if (LINUX)
+    target_compile_options(project_compiler_options INTERFACE
+        $<$<CONFIG:Debug>:-Wall -Wextra -g -fno-omit-frame-pointer -fsanitize=address,leak>
+        $<$<CONFIG:Release>:-O2>
+    )
+endif(LINUX)
+if(APPLE)
+    target_compile_options(project_compiler_options INTERFACE
+        $<$<CONFIG:Debug>:-Wall -Wextra -g -fno-omit-frame-pointer>
+        $<$<CONFIG:Release>:-O2>
+    )
+endif(APPLE)
 
 add_subdirectory(src/Triangles)
 include_directories(src)
@@ -36,13 +39,11 @@ set(TRIANGLES_SOURCES
 add_executable(HW3D ${TRIANGLES_SOURCES})
 
 target_link_libraries(
-    HW3D PRIVATE project_compiler_options)
+    HW3D PRIVATE project_compiler_options
+         PUBLIC GTest::gtest GTest::gtest_main)
 
-target_compile_options(project_compiler_options INTERFACE
-  $<$<CONFIG:Debug>:-Wall -Wextra -g -fno-omit-frame-pointer -fsanitize=address,leak>
-  $<$<CONFIG:Release>:-O2>
-)
-
-target_link_options(HW3D PRIVATE
-  $<$<CONFIG:Debug>:-fsanitize=address,leak>
-)
+if (LINUX)
+    target_link_options(HW3D PRIVATE
+    $<$<CONFIG:Debug>:-fsanitize=address,leak>
+    )
+endif(LINUX)

@@ -126,7 +126,7 @@ TEST(PolygonTest, ComplexIntersectionCheckIfRuns) {
     auto d2 = poly2.ComputeDistances(poly1);
 
     bool intersect = poly1.ComplexIntersectionCheck(poly2, d1, d2);
-    EXPECT_TRUE(intersect || !intersect); // ensure runs without crash
+    EXPECT_TRUE(intersect || !intersect);
 }
 
 TEST(PolygonTest, GeneralIntersectionCheckIntersect) {

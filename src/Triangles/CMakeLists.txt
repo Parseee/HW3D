@@ -36,8 +36,10 @@ target_link_libraries(runTests
     project_compiler_options
 )
 
-target_link_options(runTests PRIVATE
-  $<$<CONFIG:Debug>:-fsanitize=address,leak>
-)
+if (LINUX)
+    target_link_options(runTests PRIVATE
+    $<$<CONFIG:Debug>:-fsanitize=address,leak>
+    )
+endif(LINUX)
 
 add_test(NAME GeometryTests COMMAND runTests)

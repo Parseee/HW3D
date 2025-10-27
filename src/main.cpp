@@ -1,7 +1,9 @@
 #include <array>
 #include <cassert>
+#include <cstddef>
 #include <fstream>
 #include <iostream>
+#include <unordered_set>
 #include <vector>
 
 #include "Triangles/src/polygon.hpp"
@@ -46,51 +48,22 @@ int main() {
         polygons.emplace_back(pts);
     }
 
-    std::cerr << polygons.size() << std::endl;
-
-    size_t ints = 0;
+    std::unordered_set<size_t> ints;
     for (size_t i = 0; i < polygons.size(); ++i) {
         for (size_t j = i + 1; j < polygons.size(); ++j) {
             if (polygons[i].GeneralIntersectionCheck(polygons[j])) {
-                ints += 1;
+                ints.insert(i);
+                ints.insert(j);
                 // std::cout << polygons[i] << " " << polygons[j] << std::endl;
-                break;
+                // break;
             }
         }
     }
-    std::cout << ints << std::endl;
+
+    for (const auto &elem : ints) {
+        std::cout << elem << " ";
+    }
+    std::cout << std::endl;
 
     exportOBJ(points, n / 9, "triangles.obj");
 }
-
-/*
-6
-0 1 0
-0 0 0
-1 0 0.5
-1 1 0
-0 -1 0
-1 1 1
-*/
-
-/*
-6
--21.1391
--2.96044
--3.74303
--21.487
--3.0482
--3.85087
--21.1587
--2.62302
--4.02156
-16.086
-2.91767
-11.365
-16.3106
-2.91342
-11.0859
-16.7994
-2.65756
-10.6859
-*/
