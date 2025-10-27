@@ -47,6 +47,10 @@ if (LINUX)
     target_link_options(runTests PRIVATE
         $<$<CONFIG:Debug>:-fsanitize=address,leak>
     )
+else()
+    target_link_options(runTests PRIVATE
+        $<$<CONFIG:Debug>:-pg>
+    )
 endif()
 
 add_test(NAME GeometryTests COMMAND runTests)

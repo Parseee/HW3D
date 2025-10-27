@@ -1,5 +1,6 @@
 #include <array>
 #include <cassert>
+#include <cmath>
 #include <cstddef>
 #include <iostream>
 #include <unordered_set>
@@ -8,12 +9,12 @@
 #include "Triangles/src/polygon.hpp"
 
 int main() {
-    int n;
-    std::cin >> n;
+    int poly_num;
+    std::cin >> poly_num;
     assert(n > 0 && "amount of triangles must be non-negative");
 
     std::vector<Point_t> points;
-    for (size_t i = 0; i < size_t(n); ++i) {
+    for (size_t i = 0; i < size_t(poly_num); ++i) {
         double x, y, z;
         std::cin >> x >> y >> z;
         points.push_back({x, y, z});
@@ -25,18 +26,27 @@ int main() {
         polygons.emplace_back(pts);
     }
 
-    std::unordered_set<size_t> ints;
+    std::vector<bool> ints(poly_num, false);
+    // #pragma omp parallel for
     for (size_t i = 0; i < polygons.size(); ++i) {
+        if (ints[i]) {
+            continue;
+        }
         for (size_t j = i + 1; j < polygons.size(); ++j) {
+            if (ints[j]) {
+                continue;
+            }
             if (polygons[i].GeneralIntersectionCheck(polygons[j])) {
-                ints.insert(i);
-                ints.insert(j);
+                ints[i] = true;
+                ints[j] = true;
             }
         }
     }
 
-    for (const auto &elem : ints) {
-        std::cout << elem << " ";
+    for (size_t i = 0; i < poly_num; ++i) {
+        if (ints[i]) {
+            std::cout << i + 1 << " ";
+        }
     }
     std::cout << std::endl;
 }

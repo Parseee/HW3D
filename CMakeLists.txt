@@ -25,7 +25,7 @@ endif(LINUX)
 if(APPLE)
     target_compile_options(project_compiler_options INTERFACE
         $<$<CONFIG:Debug>:-Wall -Wextra -g -fno-omit-frame-pointer>
-        $<$<CONFIG:Release>:-O2>
+        $<$<CONFIG:Release>:-O0 -pg -fprofile-instr-generate>
     )
 endif(APPLE)
 
