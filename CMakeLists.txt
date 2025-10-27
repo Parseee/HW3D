@@ -29,21 +29,17 @@ if(APPLE)
     )
 endif(APPLE)
 
-add_subdirectory(src/Triangles)
 include_directories(src)
+add_subdirectory(src/Triangles)
 
 set(TRIANGLES_SOURCES 
     src/main.cpp
-    )
+)
     
-add_executable(HW3D ${TRIANGLES_SOURCES})
+add_executable(${PROJECT_NAME} ${TRIANGLES_SOURCES})
 
-target_link_libraries(
-    HW3D PRIVATE project_compiler_options
-         PUBLIC GTest::gtest GTest::gtest_main)
-
-if (LINUX)
-    target_link_options(HW3D PRIVATE
-    $<$<CONFIG:Debug>:-fsanitize=address,leak>
-    )
-endif(LINUX)
+target_link_libraries(${PROJECT_NAME}
+    PRIVATE 
+        project_compiler_options
+        Triangles  # Link with your Triangles library
+)

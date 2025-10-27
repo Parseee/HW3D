@@ -1,7 +1,6 @@
-#include "polygon.hpp"
+#include "src/polygon.hpp"
 #include <array>
 #include <gtest/gtest.h>
-#include <limits>
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
