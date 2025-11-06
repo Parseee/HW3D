@@ -57,7 +57,7 @@ TEST(VectorTest, Constructors) {
     Point_t p1(1, 2, 3);
     Vector_t vec1(p1);
     EXPECT_DOUBLE_EQ(vec1.x(), 1);
-    
+
     Point_t p2(4, 5, 6);
     Vector_t vec2(p2);
     EXPECT_DOUBLE_EQ(vec2.x(), 4);
@@ -108,7 +108,9 @@ TEST(PolygonTest, ComputeProjection) {
     EXPECT_DOUBLE_EQ(proj, 9); // max component is z
 }
 
-TEST(PolygonTest, ComputeIntersectionIntervals) {
+// ------------------- Intersection Tests -------------------
+
+TEST(IntersectionTest, ComputeIntersectionIntervals) {
     Polygon_t poly({Point_t(0, 0, 0), Point_t(1, 0, 0), Point_t(0, 1, 0)});
     std::array<double, 3> distances = {1.0, -1.0, 0.5};
     Vector_t axis(Point_t(1, 0, 0));
@@ -117,7 +119,7 @@ TEST(PolygonTest, ComputeIntersectionIntervals) {
     EXPECT_LE(t_min, t_max);
 }
 
-TEST(PolygonTest, ComplexIntersectionCheckIfRuns) {
+TEST(IntersectionTest, ComplexIntersectionCheckIfRuns) {
     Polygon_t poly1({Point_t(0, 0, 0), Point_t(1, 0, 0), Point_t(0, 1, 0)});
     Polygon_t poly2(
         {Point_t(0, 0, 0.5), Point_t(1, 0, 0.5), Point_t(0, 1, 0.5)});
@@ -128,14 +130,14 @@ TEST(PolygonTest, ComplexIntersectionCheckIfRuns) {
     EXPECT_TRUE(intersect || !intersect);
 }
 
-TEST(PolygonTest, GeneralIntersectionCheckIntersect) {
+TEST(IntersectionTest, GeneralIntersectionCheckIntersect) {
     Polygon_t poly1({Point_t(0, 1, 0), Point_t(0, 0, 0), Point_t(1, 0, 0.5)});
     Polygon_t poly2({Point_t(1, 1, 0), Point_t(0, -1, 0), Point_t(1, 1, 1)});
     auto intersect = poly1.GeneralIntersectionCheck(poly2);
     EXPECT_TRUE(intersect);
 }
 
-TEST(PolygonTest, GeneralIntersectionCheckDoNotIntersect) {
+TEST(IntersectionTest, GeneralIntersectionCheckDoNotIntersect) {
     Polygon_t poly1({Point_t(0, 1, 0), Point_t(0, 0, 0), Point_t(1, 0, 0.5)});
     Polygon_t poly2(
         {Point_t(0, -1, 0.5), Point_t(0, -1, 1), Point_t(0, 0, 0.5)});
@@ -143,7 +145,7 @@ TEST(PolygonTest, GeneralIntersectionCheckDoNotIntersect) {
     EXPECT_FALSE(intersect);
 }
 
-TEST(PolygonTest, GeneralIntersectionCheckSinglePoint) {
+TEST(IntersectionTest, GeneralIntersectionCheckSinglePoint) {
     Polygon_t poly1({Point_t(0, 1, 0), Point_t(0, 0, 0), Point_t(1, 0, 0.5)});
     Polygon_t poly2(
         {Point_t(0, -1, 0.5), Point_t(0, -1, 1), Point_t(1, 0, 0.5)});
@@ -151,7 +153,7 @@ TEST(PolygonTest, GeneralIntersectionCheckSinglePoint) {
     EXPECT_TRUE(intersect);
 }
 
-TEST(PolygonTest, GeneralIntersectionCheckComplex) {
+TEST(IntersectionTest, GeneralIntersectionCheckComplex) {
     Polygon_t poly1(
         {Point_t(12.386644688712941, 13.149797301748318, 14.583230270789596),
          Point_t(10.949402845223053, 11.498552932115821, 16.210422004080684),
@@ -164,7 +166,7 @@ TEST(PolygonTest, GeneralIntersectionCheckComplex) {
     EXPECT_TRUE(intersect);
 }
 
-TEST(PolygonTest, GeneralIntersectionCheckComplex2) {
+TEST(IntersectionTest, GeneralIntersectionCheckComplex2) {
     Polygon_t poly1({Point_t(-21.1391, -2.96044, -3.74303),
                      Point_t(-21.487, -3.0482, -3.85087),
                      Point_t(-21.1587, -2.62302, -4.02156)});
@@ -175,7 +177,7 @@ TEST(PolygonTest, GeneralIntersectionCheckComplex2) {
     EXPECT_FALSE(intersect);
 }
 
-TEST(PolygonTest, GeneralIntersectionCheckCoplanarAndNonCoplanar) {
+TEST(IntersectionTest, GeneralIntersectionCheckCoplanarAndNonCoplanar) {
     Polygon_t poly1({Point_t(0, 0, 0), Point_t(1, 0, 0), Point_t(0, 1, 0)});
     Polygon_t poly2(
         {Point_t(0.5, 0.5, 0), Point_t(1.5, 0.5, 0), Point_t(0.5, 1.5, 0)});
@@ -186,6 +188,15 @@ TEST(PolygonTest, GeneralIntersectionCheckCoplanarAndNonCoplanar) {
 
     EXPECT_TRUE(coplanar_intersect || !coplanar_intersect);
     EXPECT_FALSE(noncoplanar_intersect); // they are parallel planes apart
+}
+
+TEST(IntersectionTest, ComplexCoplanarIntersectionCheck) {
+    Polygon_t poly1({Point_t(0, 0, 0), Point_t(0, 1, 0), Point_t(1, 2, 2)});
+    Polygon_t poly2({Point_t(0, -1, 0), Point_t(0, 2, 0), Point_t(2, 2, 4)});
+
+    bool coplanar_intersect = poly1.GeneralIntersectionCheck(poly2);
+
+    EXPECT_TRUE(coplanar_intersect);
 }
 
 // ------------------- Edge Cases -------------------

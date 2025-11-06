@@ -1,20 +1,18 @@
 #include <array>
 #include <cassert>
-#include <cmath>
 #include <cstddef>
 #include <iostream>
-#include <unordered_set>
 #include <vector>
 
 #include "Triangles/src/polygon.hpp"
 
 int main() {
-    int poly_num;
+    size_t poly_num;
     std::cin >> poly_num;
-    assert(n > 0 && "amount of triangles must be non-negative");
+    assert(poly_num > 0 && "amount of triangles must be non-negative");
 
     std::vector<Point_t> points;
-    for (size_t i = 0; i < size_t(poly_num); ++i) {
+    for (size_t i = 0; i < poly_num * 3; ++i) {
         double x, y, z;
         std::cin >> x >> y >> z;
         points.push_back({x, y, z});
