@@ -11,7 +11,8 @@ namespace {
 static constexpr double EPS = 1e-5;
 } // namespace
 
-class Point_t {
+namespace Geom {
+class Point_t final {
   private:
     static constexpr size_t POINT_NUM = 3;
 
@@ -58,7 +59,7 @@ inline Point_t operator-(const Point_t &point) {
     return Point_t(-point.x(), -point.y(), -point.z());
 }
 
-class Vector_t {
+class Vector_t final {
   private:
     static constexpr size_t POINT_NUM = 1;
 
@@ -98,7 +99,7 @@ inline std::ostream &operator<<(std::ostream &out, const Vector_t &vec) {
     return out;
 }
 
-class Polygon_t {
+class Polygon_t final {
   public:
     static constexpr size_t POINT_NUM = 3;
 
@@ -154,3 +155,4 @@ class Polygon_t {
     bool CoplanarIntersectionCheck(const Polygon_t &poly) const;
 };
 std::ostream &operator<<(std::ostream &stream, const Polygon_t &poly);
+}; // namespace Geom

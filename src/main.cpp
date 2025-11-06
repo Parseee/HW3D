@@ -11,21 +11,21 @@ int main() {
     std::cin >> poly_num;
     assert(poly_num > 0 && "amount of triangles must be non-negative");
 
-    std::vector<Point_t> points;
+    std::vector<Geom::Point_t> points;
     for (size_t i = 0; i < poly_num * 3; ++i) {
         double x, y, z;
         std::cin >> x >> y >> z;
         points.push_back({x, y, z});
     }
 
-    std::vector<Polygon_t> polygons;
+    std::vector<Geom::Polygon_t> polygons;
     for (size_t i = 0; i < points.size() - 2; i += 3) {
-        std::array<Point_t, 3> pts = {points[i], points[i + 1], points[i + 2]};
+        std::array<Geom::Point_t, 3> pts = {points[i], points[i + 1],
+                                            points[i + 2]};
         polygons.emplace_back(pts);
     }
 
     std::vector<bool> ints(poly_num, false);
-    // #pragma omp parallel for
     for (size_t i = 0; i < polygons.size(); ++i) {
         if (ints[i]) {
             continue;
