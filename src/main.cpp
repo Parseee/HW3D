@@ -25,6 +25,8 @@ int main() {
         polygons.emplace_back(pts);
     }
 
+    BB::Tree BWH(polygons);
+
     std::vector<bool> ints(poly_num, false);
     for (size_t i = 0; i < polygons.size(); ++i) {
         if (ints[i]) {
@@ -32,6 +34,10 @@ int main() {
         }
         for (size_t j = i + 1; j < polygons.size(); ++j) {
             if (ints[j]) {
+                continue;
+            }
+            if (!BWH.IntersectAABB(i, j)) {
+                // std::cerr << "bad\n";
                 continue;
             }
             if (polygons[i].GeneralIntersectionCheck(polygons[j])) {
@@ -43,7 +49,7 @@ int main() {
 
     for (size_t i = 0; i < poly_num; ++i) {
         if (ints[i]) {
-            std::cout << i + 1 << " ";
+            std::cout << i + 1 << "\n";
         }
     }
     std::cout << std::endl;

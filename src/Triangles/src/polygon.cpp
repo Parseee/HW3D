@@ -1,16 +1,18 @@
+#include <iomanip>
+
 #include "polygon.hpp"
 
 double Geom::Polygon_t::SignedDistance(const Geom::Vector_t &norm,
-                                           const Point_t x,
-                                           const double shift) const noexcept {
+                                       const Point_t x,
+                                       const double shift) const noexcept {
     auto dist = Geom::Vector_t::DotProduct(norm, x) + shift;
     return (std::abs(dist) < EPS) ? 0.0 : dist;
 }
 
 std::array<double, Geom::Polygon_t::POINT_NUM>
 Geom::Polygon_t::ComputeDistances(const Geom::Polygon_t &poly) const {
-    auto norm = Geom::Vector_t::CrossProduct(
-        Geom::Vector_t(v1() - v0()), Geom::Vector_t(v2() - v0()));
+    auto norm = Geom::Vector_t::CrossProduct(Geom::Vector_t(v1() - v0()),
+                                             Geom::Vector_t(v2() - v0()));
     auto d2 = -Geom::Vector_t::DotProduct(norm, Geom::Vector_t{v0()});
 
     return std::array<double, POINT_NUM>{SignedDistance(norm, poly.v0(), d2),
@@ -19,7 +21,7 @@ Geom::Polygon_t::ComputeDistances(const Geom::Polygon_t &poly) const {
 }
 
 double Geom::Polygon_t::ComputeProjection(const Geom::Vector_t &axis,
-                                              const Geom::Vector_t &vec) {
+                                          const Geom::Vector_t &vec) {
     double ax = axis.x(), ay = axis.y(), az = axis.z();
     double adx = std::abs(ax), ady = std::abs(ay), adz = std::abs(az);
 
@@ -63,11 +65,11 @@ bool Geom::Polygon_t::ComplexIntersectionCheck(
     const Geom::Polygon_t &poly,
     const std::array<double, POINT_NUM> &this_distances,
     const std::array<double, POINT_NUM> &other_distances) const {
-    auto norm1 = Geom::Vector_t::CrossProduct(
-        Geom::Vector_t(v2() - v0()), Geom::Vector_t(v1() - v0()));
-    auto norm2 = Geom::Vector_t::CrossProduct(
-        Geom::Vector_t(poly.v2() - poly.v0()),
-        Geom::Vector_t(poly.v1() - poly.v0()));
+    auto norm1 = Geom::Vector_t::CrossProduct(Geom::Vector_t(v2() - v0()),
+                                              Geom::Vector_t(v1() - v0()));
+    auto norm2 =
+        Geom::Vector_t::CrossProduct(Geom::Vector_t(poly.v2() - poly.v0()),
+                                     Geom::Vector_t(poly.v1() - poly.v0()));
 
     auto intersect_norm = Geom::Vector_t::CrossProduct(norm1, norm2);
 
@@ -81,8 +83,7 @@ bool Geom::Polygon_t::ComplexIntersectionCheck(
     return right_border >= left_border;
 }
 
-bool Geom::Polygon_t::GeneralIntersectionCheck(
-    const Geom::Polygon_t &poly) {
+bool Geom::Polygon_t::GeneralIntersectionCheck(const Geom::Polygon_t &poly) {
     // from poly to plane of this
     std::array<double, POINT_NUM> this_distances = ComputeDistances(poly);
     std::array<double, POINT_NUM> other_distances =
@@ -107,8 +108,7 @@ bool Geom::Polygon_t::GeneralIntersectionCheck(
     return ComplexIntersectionCheck(poly, this_distances, other_distances);
 }
 
-bool Geom::Polygon_t::CheckPolygonInPolygon(
-    const Geom::Polygon_t &poly) const {
+bool Geom::Polygon_t::CheckPolygonInPolygon(const Geom::Polygon_t &poly) const {
     const Geom::Vector_t normal = Geom::Vector_t::CrossProduct(
         poly.v1() - poly.v0(), poly.v2() - poly.v0());
     bool inside = true;
@@ -137,19 +137,19 @@ bool Geom::Polygon_t::CheckPolygonInPolygon(
 }
 
 bool Geom::Polygon_t::CheckSegmentsIntersection(const Point_t &v1,
-                                                    const Point_t &v2,
-                                                    const Point_t &w1,
-                                                    const Point_t &w2) {
+                                                const Point_t &v2,
+                                                const Point_t &w1,
+                                                const Point_t &w2) {
 
     auto int1 = Geom::Vector_t::DotProduct(Geom::Vector_t{v2 - v1},
-                                               Geom::Vector_t{w2 - v1}) *
+                                           Geom::Vector_t{w2 - v1}) *
                 Geom::Vector_t::DotProduct(Geom::Vector_t{v2 - v1},
-                                               Geom::Vector_t{w1 - v1});
+                                           Geom::Vector_t{w1 - v1});
 
     auto int2 = Geom::Vector_t::DotProduct(Geom::Vector_t{w2 - w1},
-                                               Geom::Vector_t{v2 - w1}) *
+                                           Geom::Vector_t{v2 - w1}) *
                 Geom::Vector_t::DotProduct(Geom::Vector_t{w2 - w1},
-                                               Geom::Vector_t{v1 - w1});
+                                           Geom::Vector_t{v1 - w1});
 
     return (-int1 > EPS) && (-int2 > EPS);
 }
@@ -180,16 +180,51 @@ bool Geom::Polygon_t::CoplanarIntersectionCheck(
     return false;
 }
 
-std::ostream &operator<<(std::ostream &stream,
-                         const Geom::Polygon_t &poly) {
+std::ostream &operator<<(std::ostream &stream, const Geom::Polygon_t &poly) {
     stream << "triangle(";
+    stream << std::fixed << std::setprecision(2);
+
     for (size_t i = 0; i < poly.POINT_NUM; ++i) {
-        stream << std::format("({:.2f}, {:.2f}, {:.2f})", poly[i].x(),
-                              poly[i].y(), poly[i].z());
-        if (i != poly.POINT_NUM - 1) {
+        const auto &p = poly[i];
+        stream << "(" << p.x() << ", " << p.y() << ", " << p.z() << ")";
+        if (i != poly.POINT_NUM - 1)
             stream << ',';
-        }
     }
+
     stream << ")";
     return stream;
+}
+
+Geom::Vector_t Geom::Vector_t::CrossProduct(const Vector_t &vec1,
+                                            const Vector_t &vec2) {
+    double c1 = vec1.y() * vec2.z() - vec2.y() * vec1.z();
+    double c2 = -(vec1.x() * vec2.z() - vec2.x() * vec1.z());
+    double c3 = vec1.x() * vec2.y() - vec2.x() * vec1.y();
+    return Vector_t(Point_t{c1, c2, c3});
+}
+
+std::ostream &Geom::operator<<(std::ostream &out, const Vector_t &vec) {
+    out << "vector((0,0,0), (" << std::fixed << std::setprecision(2) << vec.x()
+        << ", " << vec.y() << ", " << vec.z() << "))";
+    return out;
+}
+
+Geom::Vector_t Geom::operator*(const Vector_t &vec,
+                               const double coef) noexcept {
+    return Vector_t(Point_t{vec.x() * coef, vec.y() * coef, vec.z() * coef});
+}
+
+Geom::Vector_t Geom::operator+(const Vector_t &vec,
+                               const Point_t &point) noexcept {
+    return Vector_t(
+        Point_t{vec.x() + point.x(), vec.y() + point.y(), vec.z() + point.z()});
+}
+
+Geom::AABB Geom::Polygon_t::GetAABB() const {
+    AABB result;
+
+    result.lower_bound = std::min({v0(), v1(), v2()});
+    result.upper_bound = std::max({v0(), v1(), v2()});
+
+    return result;
 }

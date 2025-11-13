@@ -1,9 +1,9 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
-#include <cstddef>
-#include <format>
 
+#include <compare>
 #include <iostream>
 #include <ostream>
 
@@ -45,6 +45,21 @@ class Point_t final {
     const double &operator[](size_t i) const { return data_.points[i]; }
 
     const double *data() const { return data_.points; }
+
+    auto operator<=>(const Point_t &other) const {
+        // for (size_t i = 0; i < POINT_NUM; ++i) {
+        //     if ((*this)[i] < other[i]) {
+        //         return std::strong_ordering::less;
+        //     }
+        //     if ((*this)[i] > other[i]) {
+        //         return std::strong_ordering::greater;
+        //     }
+        // }
+        // return std::strong_ordering::equal;
+        return std::lexicographical_compare_three_way(
+            data_.points, data_.points + POINT_NUM, other.data_.points,
+            other.data_.points + POINT_NUM);
+    }
 };
 
 inline Point_t operator+(const Point_t &p1, const Point_t &p2) {
@@ -68,36 +83,42 @@ class Vector_t final {
   public:
     Vector_t(const Point_t point = {0, 0, 0}) : v_(point) {}
 
-    static Vector_t CrossProduct(const Vector_t &vec1, const Vector_t &vec2) {
-        double c1 = vec1.y() * vec2.z() - vec2.y() * vec1.z();
-        double c2 = -(vec1.x() * vec2.z() - vec2.x() * vec1.z());
-        double c3 = vec1.x() * vec2.y() - vec2.x() * vec1.y();
-        return Vector_t(Point_t{c1, c2, c3});
-    }
+    static Vector_t CrossProduct(const Vector_t &vec1, const Vector_t &vec2);
 
     static double DotProduct(const Vector_t &vec1, const Vector_t &vec2) {
         return vec1.x() * vec2.x() + vec1.y() * vec2.y() + vec1.z() * vec2.z();
     }
 
+    double Len() const { return std::sqrt(x() * x() + y() * y() + z() * z()); }
+
     double x() const { return v_.x(); }
     double y() const { return v_.y(); }
     double z() const { return v_.z(); }
+
+    auto operator<=>(const Vector_t &) const = default;
 };
 
-inline Vector_t operator+(const Vector_t &vec, const Point_t &point) noexcept {
-    return Vector_t(
-        Point_t{vec.x() + point.x(), vec.y() + point.y(), vec.z() + point.z()});
-}
+Vector_t operator+(const Vector_t &vec, const Point_t &point) noexcept;
+Vector_t operator*(const Vector_t &vec, const double coef) noexcept;
+std::ostream &operator<<(std::ostream &out, const Vector_t &vec);
 
-inline Vector_t operator*(const Vector_t &vec, const double coef) noexcept {
-    return Vector_t(Point_t{vec.x() * coef, vec.y() * coef, vec.z() * coef});
-}
+struct AABB {
+    Vector_t lower_bound;
+    Vector_t upper_bound;
 
-inline std::ostream &operator<<(std::ostream &out, const Vector_t &vec) {
-    out << std::format("vector((0,0,0), ({:.2f}, {:.2f}, {:.2f}))", vec.x(),
-                       vec.y(), vec.z());
-    return out;
-}
+    static AABB Union(const AABB &left, const AABB &right) {
+        AABB res;
+
+        res.lower_bound = std::min(left.lower_bound, right.lower_bound);
+        res.upper_bound = std::max(left.upper_bound, right.upper_bound);
+
+        return res;
+    }
+
+    double Volume() const {
+        return Vector_t::CrossProduct(lower_bound, upper_bound).Len() / 2.;
+    }
+};
 
 class Polygon_t final {
   public:
@@ -153,6 +174,51 @@ class Polygon_t final {
     bool CheckPolygonSidesIntersection(const Polygon_t &poly) const;
 
     bool CoplanarIntersectionCheck(const Polygon_t &poly) const;
+
+    AABB GetAABB() const;
 };
+
 std::ostream &operator<<(std::ostream &stream, const Polygon_t &poly);
+
 }; // namespace Geom
+
+namespace BB {
+
+struct Node {
+    Geom::AABB bbox;
+    // size_t obj_idx;
+    // size_t par_idx;
+    // size_t lhs_idx;
+    // size_t rhs_idx;
+    // bool is_leaf;
+};
+
+class Tree {
+  public:
+    Tree(const std::vector<Geom::Polygon_t> &polygons) {
+        nodes_.resize(polygons.size());
+
+        for (size_t i = 0; i < nodes_.size(); ++i) {
+            nodes_[i].bbox = polygons[i].GetAABB();
+        }
+    }
+
+    bool IntersectAABB(size_t left, size_t right) const {
+        const Geom::AABB &l = nodes_[left].bbox;
+        const Geom::AABB &r = nodes_[right].bbox;
+
+        bool x_sec = (l.lower_bound.x() <= r.upper_bound.x()) &&
+                     (l.upper_bound.x() >= r.lower_bound.x());
+        bool y_sec = (l.lower_bound.y() <= r.upper_bound.y()) &&
+                     (l.upper_bound.y() >= r.lower_bound.y());
+        bool z_sec = (l.lower_bound.z() <= r.upper_bound.z()) &&
+                     (l.upper_bound.z() >= r.lower_bound.z());
+
+        return x_sec && y_sec && z_sec;
+    }
+
+  private:
+    std::vector<Node> nodes_;
+    size_t root_idx;
+};
+}; // namespace BB
