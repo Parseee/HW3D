@@ -108,6 +108,22 @@ TEST(PolygonTest, ComputeProjection) {
     EXPECT_DOUBLE_EQ(proj, 9); // max component is z
 }
 
+TEST(IntersectionTest, DegenerateTrianglePoint) {
+    Geom::Polygon_t pointTri({
+        Geom::Point_t(0,0,0),
+        Geom::Point_t(0,0,0),
+        Geom::Point_t(0,0,0)
+    });
+
+    Geom::Polygon_t tri({
+        Geom::Point_t(-1,-1,0),
+        Geom::Point_t(1,-1,0),
+        Geom::Point_t(0,1,0)
+    });
+
+    EXPECT_FALSE(pointTri.GeneralIntersectionCheck(tri));
+}
+
 // ------------------- Intersection Tests -------------------
 
 TEST(IntersectionTest, ComputeIntersectionIntervals) {

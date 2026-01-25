@@ -2,26 +2,28 @@
 
 #include "polygon.hpp"
 
-double Geom::Polygon_t::SignedDistance(const Geom::Vector_t &norm,
+using namespace Geom;
+
+double Polygon_t::SignedDistance(const Vector_t &norm,
                                        const Point_t x,
                                        const double shift) const noexcept {
-    auto dist = Geom::Vector_t::DotProduct(norm, x) + shift;
+    auto dist = Vector_t::DotProduct(norm, x) + shift;
     return (std::abs(dist) < EPS) ? 0.0 : dist;
 }
 
-std::array<double, Geom::Polygon_t::POINT_NUM>
-Geom::Polygon_t::ComputeDistances(const Geom::Polygon_t &poly) const {
-    auto norm = Geom::Vector_t::CrossProduct(Geom::Vector_t(v1() - v0()),
-                                             Geom::Vector_t(v2() - v0()));
-    auto d2 = -Geom::Vector_t::DotProduct(norm, Geom::Vector_t{v0()});
+std::array<double, Polygon_t::POINT_NUM>
+Polygon_t::ComputeDistances(const Polygon_t &poly) const {
+    auto norm = Vector_t::CrossProduct(Vector_t(v1() - v0()),
+                                             Vector_t(v2() - v0()));
+    auto d2 = -Vector_t::DotProduct(norm, Vector_t{v0()});
 
     return std::array<double, POINT_NUM>{SignedDistance(norm, poly.v0(), d2),
                                          SignedDistance(norm, poly.v1(), d2),
                                          SignedDistance(norm, poly.v2(), d2)};
 }
 
-double Geom::Polygon_t::ComputeProjection(const Geom::Vector_t &axis,
-                                          const Geom::Vector_t &vec) {
+double Polygon_t::ComputeProjection(const Vector_t &axis,
+                                          const Vector_t &vec) {
     double ax = axis.x(), ay = axis.y(), az = axis.z();
     double adx = std::abs(ax), ady = std::abs(ay), adz = std::abs(az);
 
@@ -32,13 +34,13 @@ double Geom::Polygon_t::ComputeProjection(const Geom::Vector_t &axis,
     return vec.z();
 }
 
-std::pair<double, double> Geom::Polygon_t::ComputeIntersectionIntervals(
-    const Geom::Vector_t &axis,
+std::pair<double, double> Polygon_t::ComputeIntersectionIntervals(
+    const Vector_t &axis,
     const std::array<double, POINT_NUM> &dist) const {
     std::array<double, POINT_NUM> proj{
-        ComputeProjection(axis, Geom::Vector_t{v0()}),
-        ComputeProjection(axis, Geom::Vector_t{v1()}),
-        ComputeProjection(axis, Geom::Vector_t{v2()})};
+        ComputeProjection(axis, Vector_t{v0()}),
+        ComputeProjection(axis, Vector_t{v1()}),
+        ComputeProjection(axis, Vector_t{v2()})};
 
     std::vector<double> intersections;
 
@@ -61,17 +63,17 @@ std::pair<double, double> Geom::Polygon_t::ComputeIntersectionIntervals(
     return {0.0, 0.0};
 }
 
-bool Geom::Polygon_t::ComplexIntersectionCheck(
-    const Geom::Polygon_t &poly,
+bool Polygon_t::ComplexIntersectionCheck(
+    const Polygon_t &poly,
     const std::array<double, POINT_NUM> &this_distances,
     const std::array<double, POINT_NUM> &other_distances) const {
-    auto norm1 = Geom::Vector_t::CrossProduct(Geom::Vector_t(v2() - v0()),
-                                              Geom::Vector_t(v1() - v0()));
+    auto norm1 = Vector_t::CrossProduct(Vector_t(v2() - v0()),
+                                              Vector_t(v1() - v0()));
     auto norm2 =
-        Geom::Vector_t::CrossProduct(Geom::Vector_t(poly.v2() - poly.v0()),
-                                     Geom::Vector_t(poly.v1() - poly.v0()));
+        Vector_t::CrossProduct(Vector_t(poly.v2() - poly.v0()),
+                                     Vector_t(poly.v1() - poly.v0()));
 
-    auto intersect_norm = Geom::Vector_t::CrossProduct(norm1, norm2);
+    auto intersect_norm = Vector_t::CrossProduct(norm1, norm2);
 
     auto this_interval =
         ComputeIntersectionIntervals(intersect_norm, other_distances);
@@ -83,7 +85,7 @@ bool Geom::Polygon_t::ComplexIntersectionCheck(
     return right_border >= left_border;
 }
 
-bool Geom::Polygon_t::GeneralIntersectionCheck(const Geom::Polygon_t &poly) {
+bool Polygon_t::GeneralIntersectionCheck(const Polygon_t &poly) {
     // from poly to plane of this
     std::array<double, POINT_NUM> this_distances = ComputeDistances(poly);
     std::array<double, POINT_NUM> other_distances =
@@ -108,8 +110,8 @@ bool Geom::Polygon_t::GeneralIntersectionCheck(const Geom::Polygon_t &poly) {
     return ComplexIntersectionCheck(poly, this_distances, other_distances);
 }
 
-bool Geom::Polygon_t::CheckPolygonInPolygon(const Geom::Polygon_t &poly) const {
-    const Geom::Vector_t normal = Geom::Vector_t::CrossProduct(
+bool Polygon_t::CheckPolygonInPolygon(const Polygon_t &poly) const {
+    const Vector_t normal = Vector_t::CrossProduct(
         poly.v1() - poly.v0(), poly.v2() - poly.v0());
     bool inside = true;
 
@@ -120,11 +122,11 @@ bool Geom::Polygon_t::CheckPolygonInPolygon(const Geom::Polygon_t &poly) const {
             const Point_t &a = poly[j];
             const Point_t &b = poly[(i + 1) % POINT_NUM];
 
-            const Geom::Vector_t dir = b - a;
-            const Geom::Vector_t edge_normal =
-                Geom::Vector_t::CrossProduct(normal, dir);
+            const Vector_t dir = b - a;
+            const Vector_t edge_normal =
+                Vector_t::CrossProduct(normal, dir);
 
-            if (Geom::Vector_t::DotProduct(edge_normal, point - a) > EPS) {
+            if (Vector_t::DotProduct(edge_normal, point - a) > EPS) {
                 inside = false;
                 break;
             }
@@ -136,26 +138,26 @@ bool Geom::Polygon_t::CheckPolygonInPolygon(const Geom::Polygon_t &poly) const {
     return inside;
 }
 
-bool Geom::Polygon_t::CheckSegmentsIntersection(const Point_t &v1,
+bool Polygon_t::CheckSegmentsIntersection(const Point_t &v1,
                                                 const Point_t &v2,
                                                 const Point_t &w1,
                                                 const Point_t &w2) {
 
-    auto int1 = Geom::Vector_t::DotProduct(Geom::Vector_t{v2 - v1},
-                                           Geom::Vector_t{w2 - v1}) *
-                Geom::Vector_t::DotProduct(Geom::Vector_t{v2 - v1},
-                                           Geom::Vector_t{w1 - v1});
+    auto int1 = Vector_t::DotProduct(Vector_t{v2 - v1},
+                                           Vector_t{w2 - v1}) *
+                Vector_t::DotProduct(Vector_t{v2 - v1},
+                                           Vector_t{w1 - v1});
 
-    auto int2 = Geom::Vector_t::DotProduct(Geom::Vector_t{w2 - w1},
-                                           Geom::Vector_t{v2 - w1}) *
-                Geom::Vector_t::DotProduct(Geom::Vector_t{w2 - w1},
-                                           Geom::Vector_t{v1 - w1});
+    auto int2 = Vector_t::DotProduct(Vector_t{w2 - w1},
+                                           Vector_t{v2 - w1}) *
+                Vector_t::DotProduct(Vector_t{w2 - w1},
+                                           Vector_t{v1 - w1});
 
     return (-int1 > EPS) && (-int2 > EPS);
 }
 
-bool Geom::Polygon_t::CheckPolygonSidesIntersection(
-    const Geom::Polygon_t &poly) const {
+bool Polygon_t::CheckPolygonSidesIntersection(
+    const Polygon_t &poly) const {
     for (size_t i = 0; i < POINT_NUM; ++i) {
         for (size_t j = 0; j < POINT_NUM; ++j) {
             if (!CheckSegmentsIntersection(poly[i], poly[j], (*this)[i],
@@ -167,8 +169,8 @@ bool Geom::Polygon_t::CheckPolygonSidesIntersection(
     return true;
 }
 
-bool Geom::Polygon_t::CoplanarIntersectionCheck(
-    const Geom::Polygon_t &poly) const {
+bool Polygon_t::CoplanarIntersectionCheck(
+    const Polygon_t &poly) const {
     if (CheckPolygonInPolygon(poly) || poly.CheckPolygonInPolygon(*this)) {
         return true;
     }
@@ -180,7 +182,7 @@ bool Geom::Polygon_t::CoplanarIntersectionCheck(
     return false;
 }
 
-std::ostream &operator<<(std::ostream &stream, const Geom::Polygon_t &poly) {
+std::ostream &operator<<(std::ostream &stream, const Polygon_t &poly) {
     stream << "triangle(";
     stream << std::fixed << std::setprecision(2);
 
@@ -195,7 +197,7 @@ std::ostream &operator<<(std::ostream &stream, const Geom::Polygon_t &poly) {
     return stream;
 }
 
-Geom::Vector_t Geom::Vector_t::CrossProduct(const Vector_t &vec1,
+Vector_t Vector_t::CrossProduct(const Vector_t &vec1,
                                             const Vector_t &vec2) {
     double c1 = vec1.y() * vec2.z() - vec2.y() * vec1.z();
     double c2 = -(vec1.x() * vec2.z() - vec2.x() * vec1.z());
@@ -203,24 +205,24 @@ Geom::Vector_t Geom::Vector_t::CrossProduct(const Vector_t &vec1,
     return Vector_t(Point_t{c1, c2, c3});
 }
 
-std::ostream &Geom::operator<<(std::ostream &out, const Vector_t &vec) {
+std::ostream &operator<<(std::ostream &out, const Vector_t &vec) {
     out << "vector((0,0,0), (" << std::fixed << std::setprecision(2) << vec.x()
         << ", " << vec.y() << ", " << vec.z() << "))";
     return out;
 }
 
-Geom::Vector_t Geom::operator*(const Vector_t &vec,
+Vector_t operator*(const Vector_t &vec,
                                const double coef) noexcept {
     return Vector_t(Point_t{vec.x() * coef, vec.y() * coef, vec.z() * coef});
 }
 
-Geom::Vector_t Geom::operator+(const Vector_t &vec,
+Vector_t operator+(const Vector_t &vec,
                                const Point_t &point) noexcept {
     return Vector_t(
         Point_t{vec.x() + point.x(), vec.y() + point.y(), vec.z() + point.z()});
 }
 
-Geom::AABB Geom::Polygon_t::GetAABB() const {
+AABB Polygon_t::GetAABB() const {
     AABB result;
 
     result.lower_bound = std::min({v0(), v1(), v2()});
