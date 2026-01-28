@@ -91,13 +91,13 @@ TEST(VectorTest, DotAndCrossProduct) {
 
 // ------------------- Geom::Polygon_t Tests -------------------
 TEST(PolygonTest, ConstructorAndComputeDistances) {
-    std::array<Geom::Point_t, 3> pts = {Geom::Point_t(0, 0, 0), Geom::Point_t(1, 0, 0),
-                                  Geom::Point_t(0, 1, 0)};
+    std::array<Geom::Point_t, 3> pts = {
+        Geom::Point_t(0, 0, 0), Geom::Point_t(1, 0, 0), Geom::Point_t(0, 1, 0)};
     Geom::Polygon_t poly(pts);
 
     auto distances = poly.ComputeDistances(poly);
     for (auto d : distances) {
-        EXPECT_NEAR(d, 0.0, 1e-5);
+        EXPECT_NEAR(d, 0.0, 1e-10);
     }
 }
 
@@ -108,37 +108,26 @@ TEST(PolygonTest, ComputeProjection) {
     EXPECT_DOUBLE_EQ(proj, 9); // max component is z
 }
 
-TEST(IntersectionTest, DegenerateTrianglePoint) {
-    Geom::Polygon_t pointTri({
-        Geom::Point_t(0,0,0),
-        Geom::Point_t(0,0,0),
-        Geom::Point_t(0,0,0)
-    });
+TEST(IntersectionTest, Symmetry) {
+    Geom::Polygon_t poly1({Geom::Point_t(0, 0, 0), Geom::Point_t(1, 0, 0),
+                           Geom::Point_t(0, 1, 0)});
 
-    Geom::Polygon_t tri({
-        Geom::Point_t(-1,-1,0),
-        Geom::Point_t(1,-1,0),
-        Geom::Point_t(0,1,0)
-    });
+    Geom::Polygon_t poly2({Geom::Point_t(0.2, 0.2, -1),
+                           Geom::Point_t(0.2, 0.2, 1), Geom::Point_t(1, 1, 0)});
 
-    EXPECT_FALSE(pointTri.GeneralIntersectionCheck(tri));
+    bool a = poly1.GeneralIntersectionCheck(poly2);
+    bool b = poly2.GeneralIntersectionCheck(poly1);
+
+    EXPECT_EQ(a, b);
 }
 
 // ------------------- Intersection Tests -------------------
 
-TEST(IntersectionTest, ComputeIntersectionIntervals) {
-    Geom::Polygon_t poly({Geom::Point_t(0, 0, 0), Geom::Point_t(1, 0, 0), Geom::Point_t(0, 1, 0)});
-    std::array<double, 3> distances = {1.0, -1.0, 0.5};
-    Geom::Vector_t axis(Geom::Point_t(1, 0, 0));
-
-    auto [t_min, t_max] = poly.ComputeIntersectionIntervals(axis, distances);
-    EXPECT_LE(t_min, t_max);
-}
-
 TEST(IntersectionTest, ComplexIntersectionCheckIfRuns) {
-    Geom::Polygon_t poly1({Geom::Point_t(0, 0, 0), Geom::Point_t(1, 0, 0), Geom::Point_t(0, 1, 0)});
-    Geom::Polygon_t poly2(
-        {Geom::Point_t(0, 0, 0.5), Geom::Point_t(1, 0, 0.5), Geom::Point_t(0, 1, 0.5)});
+    Geom::Polygon_t poly1({Geom::Point_t(0, 0, 0), Geom::Point_t(1, 0, 0),
+                           Geom::Point_t(0, 1, 0)});
+    Geom::Polygon_t poly2({Geom::Point_t(0, 0, 0.5), Geom::Point_t(1, 0, 0.5),
+                           Geom::Point_t(0, 1, 0.5)});
     auto d1 = poly1.ComputeDistances(poly2);
     auto d2 = poly2.ComputeDistances(poly1);
 
@@ -147,57 +136,68 @@ TEST(IntersectionTest, ComplexIntersectionCheckIfRuns) {
 }
 
 TEST(IntersectionTest, GeneralIntersectionCheckIntersect) {
-    Geom::Polygon_t poly1({Geom::Point_t(0, 1, 0), Geom::Point_t(0, 0, 0), Geom::Point_t(1, 0, 0.5)});
-    Geom::Polygon_t poly2({Geom::Point_t(1, 1, 0), Geom::Point_t(0, -1, 0), Geom::Point_t(1, 1, 1)});
+    Geom::Polygon_t poly1({Geom::Point_t(0, 1, 0), Geom::Point_t(0, 0, 0),
+                           Geom::Point_t(1, 0, 0.5)});
+    Geom::Polygon_t poly2({Geom::Point_t(1, 1, 0), Geom::Point_t(0, -1, 0),
+                           Geom::Point_t(1, 1, 1)});
     auto intersect = poly1.GeneralIntersectionCheck(poly2);
     EXPECT_TRUE(intersect);
 }
 
 TEST(IntersectionTest, GeneralIntersectionCheckDoNotIntersect) {
-    Geom::Polygon_t poly1({Geom::Point_t(0, 1, 0), Geom::Point_t(0, 0, 0), Geom::Point_t(1, 0, 0.5)});
-    Geom::Polygon_t poly2(
-        {Geom::Point_t(0, -1, 0.5), Geom::Point_t(0, -1, 1), Geom::Point_t(0, 0, 0.5)});
+    Geom::Polygon_t poly1({Geom::Point_t(0, 1, 0), Geom::Point_t(0, 0, 0),
+                           Geom::Point_t(1, 0, 0.5)});
+    Geom::Polygon_t poly2({Geom::Point_t(0, -1, 0.5), Geom::Point_t(0, -1, 1),
+                           Geom::Point_t(0, 0, 0.5)});
     auto intersect = poly1.GeneralIntersectionCheck(poly2);
     EXPECT_FALSE(intersect);
 }
 
 TEST(IntersectionTest, GeneralIntersectionCheckSinglePoint) {
-    Geom::Polygon_t poly1({Geom::Point_t(0, 1, 0), Geom::Point_t(0, 0, 0), Geom::Point_t(1, 0, 0.5)});
-    Geom::Polygon_t poly2(
-        {Geom::Point_t(0, -1, 0.5), Geom::Point_t(0, -1, 1), Geom::Point_t(1, 0, 0.5)});
+    Geom::Polygon_t poly1({Geom::Point_t(0, 1, 0), Geom::Point_t(0, 0, 0),
+                           Geom::Point_t(1, 0, 0.5)});
+    Geom::Polygon_t poly2({Geom::Point_t(0, -1, 0.5), Geom::Point_t(0, -1, 1),
+                           Geom::Point_t(1, 0, 0.5)});
     auto intersect = poly1.GeneralIntersectionCheck(poly2);
     EXPECT_TRUE(intersect);
 }
 
 TEST(IntersectionTest, GeneralIntersectionCheckComplex) {
-    Geom::Polygon_t poly1(
-        {Geom::Point_t(12.386644688712941, 13.149797301748318, 14.583230270789596),
-         Geom::Point_t(10.949402845223053, 11.498552932115821, 16.210422004080684),
-         Geom::Point_t(11.892947051130829, 10.90867559171325, 15.653029294217191)});
-    Geom::Polygon_t poly2(
-        {Geom::Point_t(12.824814622822574, 12.302666118691093, 13.317311583348722),
-         Geom::Point_t(10.934714901031004, 11.547678576168568, 15.710024434505659),
-         Geom::Point_t(13.022073702256872, 12.674256370441665, 14.655135339419592)});
+    Geom::Polygon_t poly1({Geom::Point_t(12.386644688712941, 13.149797301748318,
+                                         14.583230270789596),
+                           Geom::Point_t(10.949402845223053, 11.498552932115821,
+                                         16.210422004080684),
+                           Geom::Point_t(11.892947051130829, 10.90867559171325,
+                                         15.653029294217191)});
+    Geom::Polygon_t poly2({Geom::Point_t(12.824814622822574, 12.302666118691093,
+                                         13.317311583348722),
+                           Geom::Point_t(10.934714901031004, 11.547678576168568,
+                                         15.710024434505659),
+                           Geom::Point_t(13.022073702256872, 12.674256370441665,
+                                         14.655135339419592)});
     auto intersect = poly1.GeneralIntersectionCheck(poly2);
     EXPECT_TRUE(intersect);
 }
 
 TEST(IntersectionTest, GeneralIntersectionCheckComplex2) {
     Geom::Polygon_t poly1({Geom::Point_t(-21.1391, -2.96044, -3.74303),
-                     Geom::Point_t(-21.487, -3.0482, -3.85087),
-                     Geom::Point_t(-21.1587, -2.62302, -4.02156)});
+                           Geom::Point_t(-21.487, -3.0482, -3.85087),
+                           Geom::Point_t(-21.1587, -2.62302, -4.02156)});
     Geom::Polygon_t poly2({Geom::Point_t(16.086, 2.91767, 11.365),
-                     Geom::Point_t(16.3106, 2.91342, 11.0859),
-                     Geom::Point_t(16.7994, 2.65756, 10.6859)});
+                           Geom::Point_t(16.3106, 2.91342, 11.0859),
+                           Geom::Point_t(16.7994, 2.65756, 10.6859)});
     auto intersect = poly1.GeneralIntersectionCheck(poly2);
     EXPECT_FALSE(intersect);
 }
 
 TEST(IntersectionTest, GeneralIntersectionCheckCoplanarAndNonCoplanar) {
-    Geom::Polygon_t poly1({Geom::Point_t(0, 0, 0), Geom::Point_t(1, 0, 0), Geom::Point_t(0, 1, 0)});
-    Geom::Polygon_t poly2(
-        {Geom::Point_t(0.5, 0.5, 0), Geom::Point_t(1.5, 0.5, 0), Geom::Point_t(0.5, 1.5, 0)});
-    Geom::Polygon_t poly3({Geom::Point_t(0, 0, 1), Geom::Point_t(1, 0, 1), Geom::Point_t(0, 1, 1)});
+    Geom::Polygon_t poly1({Geom::Point_t(0, 0, 0), Geom::Point_t(1, 0, 0),
+                           Geom::Point_t(0, 1, 0)});
+    Geom::Polygon_t poly2({Geom::Point_t(0.5, 0.5, 0),
+                           Geom::Point_t(1.5, 0.5, 0),
+                           Geom::Point_t(0.5, 1.5, 0)});
+    Geom::Polygon_t poly3({Geom::Point_t(0, 0, 1), Geom::Point_t(1, 0, 1),
+                           Geom::Point_t(0, 1, 1)});
 
     bool coplanar_intersect = poly1.GeneralIntersectionCheck(poly2);
     bool noncoplanar_intersect = poly1.GeneralIntersectionCheck(poly3);
@@ -206,9 +206,21 @@ TEST(IntersectionTest, GeneralIntersectionCheckCoplanarAndNonCoplanar) {
     EXPECT_FALSE(noncoplanar_intersect); // they are parallel planes apart
 }
 
+TEST(IntersectionTest, EdgePiercingTriangle) {
+    Geom::Polygon_t poly1({Geom::Point_t(0, 0, 0), Geom::Point_t(2, 0, 0),
+                           Geom::Point_t(0, 2, 0)});
+
+    Geom::Polygon_t poly2({Geom::Point_t(1, 0, -1), Geom::Point_t(1, 0, 1),
+                           Geom::Point_t(1, 1, 0)});
+
+    EXPECT_TRUE(poly1.GeneralIntersectionCheck(poly2));
+}
+
 TEST(IntersectionTest, ComplexCoplanarIntersectionCheck) {
-    Geom::Polygon_t poly1({Geom::Point_t(0, 0, 0), Geom::Point_t(0, 1, 0), Geom::Point_t(1, 2, 2)});
-    Geom::Polygon_t poly2({Geom::Point_t(0, -1, 0), Geom::Point_t(0, 2, 0), Geom::Point_t(2, 2, 4)});
+    Geom::Polygon_t poly1({Geom::Point_t(0, 0, 0), Geom::Point_t(0, 1, 0),
+                           Geom::Point_t(1, 2, 2)});
+    Geom::Polygon_t poly2({Geom::Point_t(0, -1, 0), Geom::Point_t(0, 2, 0),
+                           Geom::Point_t(2, 2, 4)});
 
     bool coplanar_intersect = poly1.GeneralIntersectionCheck(poly2);
 
@@ -236,4 +248,44 @@ TEST(VectorTest, ScalarZeroMultiplication) {
     EXPECT_DOUBLE_EQ(zero_scaled.x(), 0);
     EXPECT_DOUBLE_EQ(zero_scaled.y(), 0);
     EXPECT_DOUBLE_EQ(zero_scaled.z(), 0);
+}
+
+TEST(IntersectionTest, SharedEdgeCoplanar) {
+    Geom::Polygon_t poly1({Geom::Point_t(0, 0, 0), Geom::Point_t(1, 0, 0),
+                           Geom::Point_t(0, 1, 0)});
+
+    Geom::Polygon_t poly2({Geom::Point_t(0, 0, 0), Geom::Point_t(1, 0, 0),
+                           Geom::Point_t(1, 1, 0)});
+
+    EXPECT_TRUE(poly1.GeneralIntersectionCheck(poly2));
+}
+
+TEST(IntersectionTest, NearlyCoplanarButSeparated) {
+    Geom::Polygon_t poly1({Geom::Point_t(0, 0, 0), Geom::Point_t(1, 0, 0),
+                           Geom::Point_t(0, 1, 0)});
+
+    Geom::Polygon_t poly2({Geom::Point_t(0, 0, 1e-9), Geom::Point_t(1, 0, 1e-9),
+                           Geom::Point_t(0, 1, 1e-9)});
+
+    EXPECT_FALSE(poly1.GeneralIntersectionCheck(poly2));
+}
+
+TEST(IntersectionTest, DegenerateTriangleLine) {
+    Geom::Polygon_t lineTri({Geom::Point_t(0, 0, 0), Geom::Point_t(1, 0, 0),
+                             Geom::Point_t(2, 0, 0)});
+
+    Geom::Polygon_t tri({Geom::Point_t(0, -1, 0), Geom::Point_t(0, 1, 0),
+                         Geom::Point_t(0, 0, 1)});
+
+    EXPECT_FALSE(lineTri.GeneralIntersectionCheck(tri));
+}
+
+TEST(IntersectionTest, DegenerateTrianglePoint) {
+    Geom::Polygon_t pointTri({Geom::Point_t(0, 0, 0), Geom::Point_t(0, 0, 0),
+                              Geom::Point_t(0, 0, 0)});
+
+    Geom::Polygon_t tri({Geom::Point_t(-1, -1, 0), Geom::Point_t(1, -1, 0),
+                         Geom::Point_t(0, 1, 0)});
+
+    EXPECT_FALSE(pointTri.GeneralIntersectionCheck(tri));
 }

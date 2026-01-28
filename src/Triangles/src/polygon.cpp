@@ -1,29 +1,34 @@
+#include <array>
+#include <cmath>
 #include <iomanip>
 
 #include "polygon.hpp"
 
 using namespace Geom;
 
-double Polygon_t::SignedDistance(const Vector_t &norm,
-                                       const Point_t x,
-                                       const double shift) const noexcept {
+#define INF std::numeric_limits<double>::infinity()
+
+double Polygon_t::SignedDistance(const Vector_t &norm, const Point_t x,
+                                 const double shift) const noexcept {
     auto dist = Vector_t::DotProduct(norm, x) + shift;
     return (std::abs(dist) < EPS) ? 0.0 : dist;
 }
 
-std::array<double, Polygon_t::POINT_NUM>
-Polygon_t::ComputeDistances(const Polygon_t &poly) const {
-    auto norm = Vector_t::CrossProduct(Vector_t(v1() - v0()),
-                                             Vector_t(v2() - v0()));
-    auto d2 = -Vector_t::DotProduct(norm, Vector_t{v0()});
+std::array<double, 3> Polygon_t::ComputeDistances(const Polygon_t &poly) const {
+    Vector_t normal = Vector_t::CrossProduct(v1() - v0(), v2() - v0());
 
-    return std::array<double, POINT_NUM>{SignedDistance(norm, poly.v0(), d2),
-                                         SignedDistance(norm, poly.v1(), d2),
-                                         SignedDistance(norm, poly.v2(), d2)};
+    if (normal == Vector_t({0, 0, 0})) {
+        return {INF, INF, INF};
+    }
+
+    double planeOffset = -Vector_t::DotProduct(normal, v0());
+
+    return {SignedDistance(normal, poly.v0(), planeOffset),
+            SignedDistance(normal, poly.v1(), planeOffset),
+            SignedDistance(normal, poly.v2(), planeOffset)};
 }
 
-double Polygon_t::ComputeProjection(const Vector_t &axis,
-                                          const Vector_t &vec) {
+double Polygon_t::ComputeProjection(const Vector_t &axis, const Vector_t &vec) {
     double ax = axis.x(), ay = axis.y(), az = axis.z();
     double adx = std::abs(ax), ady = std::abs(ay), adz = std::abs(az);
 
@@ -34,85 +39,78 @@ double Polygon_t::ComputeProjection(const Vector_t &axis,
     return vec.z();
 }
 
-std::pair<double, double> Polygon_t::ComputeIntersectionIntervals(
-    const Vector_t &axis,
-    const std::array<double, POINT_NUM> &dist) const {
-    std::array<double, POINT_NUM> proj{
-        ComputeProjection(axis, Vector_t{v0()}),
-        ComputeProjection(axis, Vector_t{v1()}),
-        ComputeProjection(axis, Vector_t{v2()})};
-
-    std::vector<double> intersections;
+std::pair<double, double>
+Geom::Polygon_t::ComputeLineIntervals(const std::array<double, 3> &coords,
+                     const std::array<double, 3> &dist) const {
+    std::vector<double> values;
 
     for (int i = 0; i < 3; ++i) {
         int j = (i + 1) % 3;
 
         if (dist[i] * dist[j] < 0.0) {
             double t = dist[i] / (dist[i] - dist[j]);
-            intersections.push_back(proj[i] + t * (proj[j] - proj[i]));
-        } else if (std::abs(dist[i]) < EPS) {
-            intersections.push_back(proj[i]);
+            values.push_back(coords[i] + t * (coords[j] - coords[i]));
+        } else if (dist[i] == 0.0) {
+            values.push_back(coords[i]);
         }
     }
 
-    if (intersections.size() >= 2) {
-        std::sort(intersections.begin(), intersections.end());
-        return {intersections.front(), intersections.back()};
-    }
+    if (values.size() < 2)
+        return {INF, -INF};
 
-    return {0.0, 0.0};
+    std::sort(values.begin(), values.end());
+    return {values.front(), values.back()};
 }
 
 bool Polygon_t::ComplexIntersectionCheck(
-    const Polygon_t &poly,
-    const std::array<double, POINT_NUM> &this_distances,
-    const std::array<double, POINT_NUM> &other_distances) const {
-    auto norm1 = Vector_t::CrossProduct(Vector_t(v2() - v0()),
-                                              Vector_t(v1() - v0()));
-    auto norm2 =
-        Vector_t::CrossProduct(Vector_t(poly.v2() - poly.v0()),
-                                     Vector_t(poly.v1() - poly.v0()));
+    const Polygon_t &other, const std::array<double, 3> &thisDistances,
+    const std::array<double, 3> &otherDistances) const {
+    Vector_t normal1 = GetNormal();
+    Vector_t normal2 = other.GetNormal();
 
-    auto intersect_norm = Vector_t::CrossProduct(norm1, norm2);
+    Vector_t intersectionDir = Vector_t::CrossProduct(normal1, normal2);
 
-    auto this_interval =
-        ComputeIntersectionIntervals(intersect_norm, other_distances);
-    auto other_interval =
-        poly.ComputeIntersectionIntervals(intersect_norm, this_distances);
+    size_t axis = intersectionDir.DominantAxis();
 
-    auto left_border = std::max(this_interval.first, other_interval.first);
-    auto right_border = std::min(this_interval.second, other_interval.second);
-    return right_border >= left_border;
+    std::array<double, 3> thisCoords = {v0()[axis], v1()[axis], v2()[axis]};
+
+    std::array<double, 3> otherCoords = {other.v0()[axis], other.v1()[axis],
+                                         other.v2()[axis]};
+
+    auto thisInterval = ComputeLineIntervals(thisCoords, thisDistances);
+
+    auto otherInterval = ComputeLineIntervals(otherCoords, otherDistances);
+
+    return !(thisInterval.second < otherInterval.first ||
+             otherInterval.second < thisInterval.first);
 }
 
 bool Polygon_t::GeneralIntersectionCheck(const Polygon_t &poly) {
-    // from poly to plane of this
-    std::array<double, POINT_NUM> this_distances = ComputeDistances(poly);
-    std::array<double, POINT_NUM> other_distances =
-        poly.ComputeDistances(*this);
+    auto distancesToThisPlane = ComputeDistances(poly);
+    if (distancesToThisPlane[0] * distancesToThisPlane[1] > 0.0 &&
+        distancesToThisPlane[0] * distancesToThisPlane[2] > 0.0) {
+        return false;
+    }
+    auto distancesToOtherPlane = poly.ComputeDistances(*this);
+    if (distancesToOtherPlane[0] * distancesToOtherPlane[1] > 0.0 &&
+        distancesToOtherPlane[0] * distancesToOtherPlane[2] > 0.0) {
+        return false;
+    }
 
-    if (std::all_of(this_distances.begin(), this_distances.end(),
-                    [](auto element) { return (element > EPS); }) ||
-        std::all_of(other_distances.begin(), other_distances.end(),
-                    [](auto element) { return (element > EPS); })) {
-        return false;
-    } else if (std::all_of(this_distances.begin(), this_distances.end(),
-                           [](auto element) { return (-element > EPS); }) ||
-               std::all_of(other_distances.begin(), other_distances.end(),
-                           [](auto element) { return (-element > EPS); })) {
-        return false;
-    } else if (std::all_of(
-                   this_distances.begin(), this_distances.end(),
-                   [](auto element) { return std::abs(element) < EPS; })) {
+    Vector_t intersectionDir =
+        Vector_t::CrossProduct(GetNormal(), poly.GetNormal());
+
+    if (intersectionDir.Len() < EPS) {
         return CoplanarIntersectionCheck(poly);
     }
 
-    return ComplexIntersectionCheck(poly, this_distances, other_distances);
+    return ComplexIntersectionCheck(poly, distancesToOtherPlane,
+                                    distancesToThisPlane);
 }
 
 bool Polygon_t::CheckPolygonInPolygon(const Polygon_t &poly) const {
-    const Vector_t normal = Vector_t::CrossProduct(
-        poly.v1() - poly.v0(), poly.v2() - poly.v0());
+    const Vector_t normal =
+        Vector_t::CrossProduct(poly.v1() - poly.v0(), poly.v2() - poly.v0());
     bool inside = true;
 
     for (size_t i = 0; i < POINT_NUM; ++i) {
@@ -123,8 +121,7 @@ bool Polygon_t::CheckPolygonInPolygon(const Polygon_t &poly) const {
             const Point_t &b = poly[(i + 1) % POINT_NUM];
 
             const Vector_t dir = b - a;
-            const Vector_t edge_normal =
-                Vector_t::CrossProduct(normal, dir);
+            const Vector_t edge_normal = Vector_t::CrossProduct(normal, dir);
 
             if (Vector_t::DotProduct(edge_normal, point - a) > EPS) {
                 inside = false;
@@ -138,39 +135,33 @@ bool Polygon_t::CheckPolygonInPolygon(const Polygon_t &poly) const {
     return inside;
 }
 
-bool Polygon_t::CheckSegmentsIntersection(const Point_t &v1,
-                                                const Point_t &v2,
-                                                const Point_t &w1,
-                                                const Point_t &w2) {
+bool Polygon_t::CheckSegmentsIntersection(const Point_t &v1, const Point_t &v2,
+                                          const Point_t &w1,
+                                          const Point_t &w2) {
 
-    auto int1 = Vector_t::DotProduct(Vector_t{v2 - v1},
-                                           Vector_t{w2 - v1}) *
-                Vector_t::DotProduct(Vector_t{v2 - v1},
-                                           Vector_t{w1 - v1});
+    auto int1 = Vector_t::DotProduct(Vector_t{v2 - v1}, Vector_t{w2 - v1}) *
+                Vector_t::DotProduct(Vector_t{v2 - v1}, Vector_t{w1 - v1});
 
-    auto int2 = Vector_t::DotProduct(Vector_t{w2 - w1},
-                                           Vector_t{v2 - w1}) *
-                Vector_t::DotProduct(Vector_t{w2 - w1},
-                                           Vector_t{v1 - w1});
+    auto int2 = Vector_t::DotProduct(Vector_t{w2 - w1}, Vector_t{v2 - w1}) *
+                Vector_t::DotProduct(Vector_t{w2 - w1}, Vector_t{v1 - w1});
 
     return (-int1 > EPS) && (-int2 > EPS);
 }
 
-bool Polygon_t::CheckPolygonSidesIntersection(
-    const Polygon_t &poly) const {
+bool Polygon_t::CheckPolygonSidesIntersection(const Polygon_t &poly) const {
     for (size_t i = 0; i < POINT_NUM; ++i) {
         for (size_t j = 0; j < POINT_NUM; ++j) {
-            if (!CheckSegmentsIntersection(poly[i], poly[j], (*this)[i],
-                                           (*this)[j])) {
-                return false;
+            if (CheckSegmentsIntersection((*this)[i],
+                                          (*this)[(i + 1) % POINT_NUM], poly[j],
+                                          poly[(j + 1) % POINT_NUM])) {
+                return true;
             }
         }
     }
-    return true;
+    return false;
 }
 
-bool Polygon_t::CoplanarIntersectionCheck(
-    const Polygon_t &poly) const {
+bool Polygon_t::CoplanarIntersectionCheck(const Polygon_t &poly) const {
     if (CheckPolygonInPolygon(poly) || poly.CheckPolygonInPolygon(*this)) {
         return true;
     }
@@ -197,8 +188,7 @@ std::ostream &operator<<(std::ostream &stream, const Polygon_t &poly) {
     return stream;
 }
 
-Vector_t Vector_t::CrossProduct(const Vector_t &vec1,
-                                            const Vector_t &vec2) {
+Vector_t Vector_t::CrossProduct(const Vector_t &vec1, const Vector_t &vec2) {
     double c1 = vec1.y() * vec2.z() - vec2.y() * vec1.z();
     double c2 = -(vec1.x() * vec2.z() - vec2.x() * vec1.z());
     double c3 = vec1.x() * vec2.y() - vec2.x() * vec1.y();
@@ -211,13 +201,11 @@ std::ostream &operator<<(std::ostream &out, const Vector_t &vec) {
     return out;
 }
 
-Vector_t operator*(const Vector_t &vec,
-                               const double coef) noexcept {
+Vector_t operator*(const Vector_t &vec, const double coef) noexcept {
     return Vector_t(Point_t{vec.x() * coef, vec.y() * coef, vec.z() * coef});
 }
 
-Vector_t operator+(const Vector_t &vec,
-                               const Point_t &point) noexcept {
+Vector_t operator+(const Vector_t &vec, const Point_t &point) noexcept {
     return Vector_t(
         Point_t{vec.x() + point.x(), vec.y() + point.y(), vec.z() + point.z()});
 }

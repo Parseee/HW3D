@@ -36,10 +36,10 @@ int main() {
             if (ints[j]) {
                 continue;
             }
-            if (!BWH.IntersectAABB(i, j)) {
-                // std::cerr << "bad\n";
-                continue;
-            }
+            // if (!BWH.IntersectAABB(i, j)) {
+            //     // std::cerr << "bad\n";
+            //     continue;
+            // }
             if (polygons[i].GeneralIntersectionCheck(polygons[j])) {
                 ints[i] = true;
                 ints[j] = true;

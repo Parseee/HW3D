@@ -8,58 +8,31 @@
 #include <ostream>
 
 namespace {
-static constexpr double EPS = 1e-5;
+static constexpr double EPS = 1e-10;
 } // namespace
 
 namespace Geom {
 class Point_t final {
   private:
     static constexpr size_t POINT_NUM = 3;
-
-    union IntPt_t {
-        struct {
-            double x_;
-            double y_;
-            double z_;
-        };
-        double points[POINT_NUM];
-
-        IntPt_t(double p1 = 0.0, double p2 = 0.0, double p3 = 0.0)
-            : x_(p1), y_(p2), z_(p3) {}
-
-        IntPt_t(const std::array<double, POINT_NUM> &arr)
-            : x_(arr[0]), y_(arr[1]), z_(arr[2]) {}
-    } data_;
+    std::array<double, POINT_NUM> points;
 
   public:
     Point_t(double p1 = 0.0, double p2 = 0.0, double p3 = 0.0)
-        : data_(p1, p2, p3) {}
+        : points({p1, p2, p3}) {}
 
-    Point_t(const std::array<double, POINT_NUM> &arr) : data_(arr) {}
+    Point_t(const std::array<double, POINT_NUM> &arr) : points(arr) {}
 
-    double x() const { return data_.x_; }
-    double y() const { return data_.y_; }
-    double z() const { return data_.z_; }
+    double x() const { return points[0]; }
+    double y() const { return points[1]; }
+    double z() const { return points[2]; }
 
-    double &operator[](size_t i) { return data_.points[i]; }
-    const double &operator[](size_t i) const { return data_.points[i]; }
+    double &operator[](size_t i) { return points[i]; }
+    const double &operator[](size_t i) const { return points[i]; }
 
-    const double *data() const { return data_.points; }
+    const std::array<double, POINT_NUM> &GetPoints() const { return points; }
 
-    auto operator<=>(const Point_t &other) const {
-        // for (size_t i = 0; i < POINT_NUM; ++i) {
-        //     if ((*this)[i] < other[i]) {
-        //         return std::strong_ordering::less;
-        //     }
-        //     if ((*this)[i] > other[i]) {
-        //         return std::strong_ordering::greater;
-        //     }
-        // }
-        // return std::strong_ordering::equal;
-        return std::lexicographical_compare_three_way(
-            data_.points, data_.points + POINT_NUM, other.data_.points,
-            other.data_.points + POINT_NUM);
-    }
+    auto operator<=>(const Point_t &other) const = default;
 };
 
 inline Point_t operator+(const Point_t &p1, const Point_t &p2) {
@@ -95,12 +68,16 @@ class Vector_t final {
     double y() const { return v_.y(); }
     double z() const { return v_.z(); }
 
+    const std::array<double, POINT_NUM * 3> &GetPoints() const {
+        return v_.GetPoints();
+    }
+
+    size_t DominantAxis() const {
+        return (x() > y()) ? 0 : ((y() > z()) ? 1 : 2);
+    }
+
     auto operator<=>(const Vector_t &) const = default;
 };
-
-Vector_t operator+(const Vector_t &vec, const Point_t &point) noexcept;
-Vector_t operator*(const Vector_t &vec, const double coef) noexcept;
-std::ostream &operator<<(std::ostream &out, const Vector_t &vec);
 
 struct AABB {
     Vector_t lower_bound;
@@ -124,30 +101,16 @@ class Polygon_t final {
   public:
     static constexpr size_t POINT_NUM = 3;
 
-  private:
-    union Pol_t {
-        struct {
-            Point_t v0_;
-            Point_t v1_;
-            Point_t v2_;
-        };
-        Point_t points[POINT_NUM];
+    Polygon_t(const std::array<Point_t, POINT_NUM> &points) : points(points) {}
 
-        Pol_t(Point_t p1, Point_t p2, Point_t p3) : v0_(p1), v1_(p2), v2_(p3) {}
+    const Point_t v0() const { return points[0]; }
+    const Point_t v1() const { return points[1]; }
+    const Point_t v2() const { return points[2]; }
 
-        Pol_t(const std::array<Point_t, POINT_NUM> &points)
-            : v0_(points[0]), v1_(points[1]), v2_(points[2]) {}
-    } data_;
+    Point_t &operator[](size_t i) { return points[i]; }
+    const Point_t &operator[](size_t i) const { return points[i]; }
 
-  public:
-    Polygon_t(const std::array<Point_t, POINT_NUM> &points) : data_(points) {}
-
-    const Point_t v0() const { return data_.v0_; }
-    const Point_t v1() const { return data_.v1_; }
-    const Point_t v2() const { return data_.v2_; }
-
-    Point_t &operator[](size_t i) { return data_.points[i]; }
-    const Point_t &operator[](size_t i) const { return data_.points[i]; }
+    const std::array<Point_t, POINT_NUM> &GetPoints() const { return points; }
 
     double SignedDistance(const Vector_t &norm, const Point_t x,
                           const double shift) const noexcept;
@@ -156,8 +119,9 @@ class Polygon_t final {
 
     static double ComputeProjection(const Vector_t &axis, const Vector_t &vec);
 
-    std::pair<double, double> ComputeIntersectionIntervals(
-        const Vector_t &axis, const std::array<double, POINT_NUM> &dist) const;
+    std::pair<double, double>
+    ComputeLineIntervals(const std::array<double, 3> &coords,
+                         const std::array<double, 3> &dist) const;
 
     bool ComplexIntersectionCheck(
         const Polygon_t &poly,
@@ -175,12 +139,25 @@ class Polygon_t final {
 
     bool CoplanarIntersectionCheck(const Polygon_t &poly) const;
 
+    Vector_t GetNormal() const {
+        return Vector_t::CrossProduct(Vector_t(v1() - v0()),
+                                      Vector_t(v2() - v0()));
+    }
+
     AABB GetAABB() const;
+
+  private:
+    std::array<Point_t, POINT_NUM> points;
 };
 
 std::ostream &operator<<(std::ostream &stream, const Polygon_t &poly);
 
 }; // namespace Geom
+
+Geom::Vector_t operator+(const Geom::Vector_t &vec,
+                         const Geom::Point_t &point) noexcept;
+Geom::Vector_t operator*(const Geom::Vector_t &vec, const double coef) noexcept;
+std::ostream &operator<<(std::ostream &out, const Geom::Vector_t &vec);
 
 namespace BB {
 
@@ -219,6 +196,5 @@ class Tree {
 
   private:
     std::vector<Node> nodes_;
-    size_t root_idx;
 };
 }; // namespace BB
