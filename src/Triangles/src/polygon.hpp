@@ -184,12 +184,12 @@ class Tree {
         const Geom::AABB &l = nodes_[left].bbox;
         const Geom::AABB &r = nodes_[right].bbox;
 
-        bool x_sec = (l.lower_bound.x() <= r.upper_bound.x()) &&
-                     (l.upper_bound.x() >= r.lower_bound.x());
-        bool y_sec = (l.lower_bound.y() <= r.upper_bound.y()) &&
-                     (l.upper_bound.y() >= r.lower_bound.y());
-        bool z_sec = (l.lower_bound.z() <= r.upper_bound.z()) &&
-                     (l.upper_bound.z() >= r.lower_bound.z());
+        bool x_sec = (l.lower_bound.x() - r.upper_bound.x() >= EPS) &&
+                     (l.upper_bound.x() - r.lower_bound.x() <= EPS);
+        bool y_sec = (l.lower_bound.y() - r.upper_bound.y() >= EPS) &&
+                     (l.upper_bound.y() - r.lower_bound.y() <= EPS);
+        bool z_sec = (l.lower_bound.z() - r.upper_bound.z() >= EPS) &&
+                     (l.upper_bound.z() - r.lower_bound.z() <= EPS);
 
         return x_sec && y_sec && z_sec;
     }
