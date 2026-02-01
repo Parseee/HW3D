@@ -31,6 +31,7 @@ endif(APPLE)
 
 include_directories(src)
 add_subdirectory(src/Triangles)
+add_subdirectory(src/Renderer)
 
 set(TRIANGLES_SOURCES 
     src/main.cpp
@@ -42,4 +43,5 @@ target_link_libraries(${PROJECT_NAME}
     PRIVATE 
         project_compiler_options
         Triangles  # Link with your Triangles library
+        Renderer
 )

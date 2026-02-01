@@ -1,6 +1,6 @@
 project(Triangles CXX)
 
-add_library(${PROJECT_NAME} STATIC
+add_library(${PROJECT_NAME} SHARED
 src/polygon.hpp
 src/polygon.cpp
 )

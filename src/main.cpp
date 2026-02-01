@@ -1,12 +1,19 @@
 #include <array>
 #include <cassert>
 #include <cstddef>
+#include <cstdio>
 #include <iostream>
 #include <vector>
 
+#include "Renderer/src/renderer.hpp"
 #include "Triangles/src/polygon.hpp"
 
 int main() {
+
+    Rndr::Renderer render(100, 200, "zov goida");
+
+    render.draw();
+
     size_t poly_num;
     std::cin >> poly_num;
     assert(poly_num > 0 && "amount of triangles must be non-negative");
