@@ -8,6 +8,8 @@
 #include <ostream>
 #include <string>
 
+// http://vless//0306eebd-604c-4c1b-b48b-f52d5f13d622@77.110.113.5:443/?type=tcp&security=reality&pbk=5nxMRuWQXO5gXdfQVvcqisDogAbcZgyVZo70xaqVtRI&fp=chrome&sni=google.com&sid=a131057b5b9f&spx=%2F&flow=xtls-rprx-vision#%F0%9F%92%AB%20%D0%A3%D0%BC%D0%BD%D0%B0%D1%8F%20%D0%BB%D0%BE%D0%BA%D0%B0%D1%86%D0%B8%D1%8F%20%D0%BE%D1%82%20StealthSurf%20VPN
+
 #include <GLFW/glfw3.h>
 #define GL_SILENCE_DEPRECATION
 #include <OpenGL/gl3.h>
