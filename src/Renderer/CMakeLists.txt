@@ -5,25 +5,34 @@ add_library(${PROJECT_NAME} SHARED
     src/renderer.hpp
 )
 
+if (NOT APPLE)
 find_package(OpenGL REQUIRED)
-find_package(glfw3 REQUIRED)
+else()
+find_library(OpenGL_FRAMEWORK OpenGL REQUIRED)
+endif()
 
-link_directories(src)
-
-set_target_properties(${PROJECT_NAME} PROPERTIES 
-    LINKER_LANGUAGE CXX
-    FOLDER "src"
-)
+find_package(glfw3 CONFIG REQUIRED)
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC 
         ${CMAKE_CURRENT_SOURCE_DIR}  # For the Triangles directory itself
         ${CMAKE_SOURCE_DIR}/src      # For the main src directory
-        ${GLFW_INCLUDE_DIR}
 )
 
+if (NOT APPLE)
 target_link_libraries(${PROJECT_NAME}
     PUBLIC project_compiler_options
-    PUBLIC glfw
-    PUBLIC OpenGL::GL
+    PRIVATE glfw
+    PRIVATE OpenGL::GL
+)
+else()
+target_link_libraries(${PROJECT_NAME}
+    PUBLIC project_compiler_options
+    PRIVATE glfw
+    PRIVATE ${OpenGL_FRAMEWORK}
+)
+endif()
+
+target_compile_definitions(${PROJECT_NAME}
+    PRIVATE GL_SILENCE_DEPRECATION
 )

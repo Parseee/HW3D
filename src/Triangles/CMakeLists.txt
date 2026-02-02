@@ -5,13 +5,6 @@ src/polygon.hpp
 src/polygon.cpp
 )
 
-link_directories(src)
-
-set_target_properties(${PROJECT_NAME} PROPERTIES 
-    LINKER_LANGUAGE CXX
-    FOLDER "src"
-)
-
 target_include_directories(${PROJECT_NAME} 
     PUBLIC 
         ${CMAKE_CURRENT_SOURCE_DIR}  # For the Triangles directory itself
