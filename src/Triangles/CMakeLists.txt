@@ -1,19 +1,11 @@
 project(Triangles CXX)
-
 add_library(${PROJECT_NAME} SHARED
 src/polygon.hpp
 src/polygon.cpp
 )
 
-target_include_directories(${PROJECT_NAME} 
-    PUBLIC 
-        ${CMAKE_CURRENT_SOURCE_DIR}  # For the Triangles directory itself
-        ${CMAKE_SOURCE_DIR}/src      # For the main src directory
-)
-
 target_link_libraries(${PROJECT_NAME}
-    PUBLIC 
-        project_compiler_options
+    PUBLIC project_compiler_options
 )
 
 # ------- TESTING --------
@@ -33,17 +25,12 @@ target_link_libraries(runTests
         ${PROJECT_NAME}
         GTest::gtest
         GTest::gtest_main
-        project_compiler_options
+    PUBLIC project_compiler_options
 )
 
-if (LINUX)
-    target_link_options(runTests PRIVATE
-        $<$<CONFIG:Debug>:-fsanitize=address,leak>
-    )
-else()
-    target_link_options(runTests PRIVATE
-        $<$<CONFIG:Debug>:-pg>
-    )
-endif()
+target_link_options(runTests PRIVATE
+    $<$<CONFIG:Debug>:-fsanitize=address,leak>
+)
+
 
 add_test(NAME GeometryTests COMMAND runTests)

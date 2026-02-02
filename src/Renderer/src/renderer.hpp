@@ -1,12 +1,7 @@
 #pragma once
 
-#include <algorithm>
-#include <array>
-
-#include <compare>
-#include <iostream>
-#include <ostream>
 #include <string>
+#include <vector>
 
 using GLfloat = float;
 using GLuint = uint;

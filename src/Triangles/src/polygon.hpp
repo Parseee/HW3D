@@ -3,9 +3,10 @@
 #include <algorithm>
 #include <array>
 
-#include <compare>
+#include <cmath>
 #include <iostream>
 #include <ostream>
+#include <vector>
 
 namespace {
 static constexpr double EPS = 1e-10;
